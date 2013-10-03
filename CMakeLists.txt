@@ -50,7 +50,8 @@ find_package(MsgPack REQUIRED)
 include_directories(${MsgPack_INCLUDE_DIRS})
 
 # Code
-add_subdirectory(src)
+add_subdirectory(lib)
+add_subdirectory(hammyd)
 
 # GTest magic
 if(TESTS)

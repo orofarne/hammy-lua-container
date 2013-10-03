@@ -57,10 +57,8 @@ if(TESTS)
     CONFIGURE_COMMAND "./configure"
     BUILD_COMMAND "make"
     INSTALL_COMMAND ""
-)
+  )
 
-set(GTEST_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/include" PARENT_SCOPE)
-set(GTEST_BOTH_LIBRARIES "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/lib/.libs/libgtest.a" "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/lib/.libs/libgtest.a" PARENT_SCOPE)
-
-
+  set(GTEST_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/include" PARENT_SCOPE)
+  set(GTEST_BOTH_LIBRARIES "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/lib/.libs/libgtest.a" "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/lib/.libs/libgtest.a" PARENT_SCOPE)
 endif(TESTS)

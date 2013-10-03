@@ -1,4 +1,4 @@
-include_directories("${PROJECT_SOURCE_DIR}/src")
+include_directories("${PROJECT_SOURCE_DIR}/lib")
 
 file(GLOB LUTOP_TEST_SOURCES "*.cpp")
 add_executable(hammy_test ${LUTOP_TEST_SOURCES})
