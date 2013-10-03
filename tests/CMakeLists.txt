@@ -6,6 +6,7 @@ add_executable(hammy_test ${LUTOP_TEST_SOURCES})
 add_dependencies(hammy_test
   hammy_lib
   luacmsgpack_lib
+  gtest
 )
 
 target_link_libraries(hammy_test
