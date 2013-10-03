@@ -1,6 +1,6 @@
 #include "luatools.hpp"
 
-namespace lutop {
+namespace hammy {
 
 LuaValue::LuaValue(lua_State *L)
     : L_(L)

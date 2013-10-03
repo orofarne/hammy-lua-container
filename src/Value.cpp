@@ -1,6 +1,6 @@
 #include "Value.hpp"
 
-namespace lutop {
+namespace hammy {
 
 Value::invalid_cast::~invalid_cast() {
 

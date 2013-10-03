@@ -1,6 +1,6 @@
 #include "Module.hpp"
 
-namespace lutop {
+namespace hammy {
 
 Module::Module(std::string const &name)
     : name_(name)

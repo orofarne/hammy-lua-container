@@ -1,15 +1,15 @@
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
 file(GLOB LUTOP_TEST_SOURCES "*.cpp")
-add_executable(lutop_test ${LUTOP_TEST_SOURCES})
+add_executable(hammy_test ${LUTOP_TEST_SOURCES})
 
-add_dependencies(lutop_test
-  lutop_lib
+add_dependencies(hammy_test
+  hammy_lib
   luacmsgpack_lib
 )
 
-target_link_libraries(lutop_test
-  lutop_lib
+target_link_libraries(hammy_test
+  hammy_lib
   luacmsgpack_lib
   ${GTEST_BOTH_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -20,4 +20,4 @@ target_link_libraries(lutop_test
   "dl"
 )
 
-run_test(lutop_test)
+run_test(hammy_test)

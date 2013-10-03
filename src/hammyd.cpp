@@ -60,7 +60,7 @@ smain(int argc, char *argv[]) {
     }
 
     // run it...
-    lutop::Manager m{pool_size, worker_lifetime};
+    hammy::Manager m{pool_size, worker_lifetime};
 
     m.loadFiles(files);
 

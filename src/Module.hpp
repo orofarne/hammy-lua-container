@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace lutop {
+namespace hammy {
 
 class Module {
     public:

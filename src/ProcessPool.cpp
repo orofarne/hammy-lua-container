@@ -4,7 +4,7 @@
 
 #include "Worker.hpp"
 
-namespace lutop {
+namespace hammy {
 
 ProcessPool::ProcessPool(boost::asio::io_service &io_service, Context &cx, unsigned int size, unsigned int max_count)
     : pool_size_(size)

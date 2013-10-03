@@ -2,7 +2,7 @@
 
 #include "Worker.hpp"
 
-using namespace lutop;
+using namespace hammy;
 
 TEST(Worker, Create) {
     Context c{};

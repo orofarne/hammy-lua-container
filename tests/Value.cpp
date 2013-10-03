@@ -4,7 +4,7 @@
 
 #include "Value.hpp"
 
-using namespace lutop;
+using namespace hammy;
 
 TEST(Value, Nil) {
     Value v;

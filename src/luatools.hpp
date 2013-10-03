@@ -2,7 +2,7 @@
 
 #include <memory>
 
-namespace lutop {
+namespace hammy {
 
 class LuaTable;
 

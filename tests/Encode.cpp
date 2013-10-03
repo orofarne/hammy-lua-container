@@ -13,7 +13,7 @@
         FAIL() << "Error: " << lua_tolstring(L, -1, nullptr);\
     }
 
-using namespace lutop;
+using namespace hammy;
 
 TEST(Encode, enc1) {
     Request r;

@@ -5,7 +5,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-namespace lutop {
+namespace hammy {
 
 class Value {
     public:

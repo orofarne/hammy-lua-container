@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <iostream>
 
-using namespace lutop;
+using namespace hammy;
 
 void *echo_f(void *in_buf, size_t in_size, size_t *out_size) {
 #if 0

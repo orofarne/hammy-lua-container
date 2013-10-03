@@ -1,6 +1,6 @@
 #include "Worker.hpp"
 
-namespace lutop {
+namespace hammy {
 
 Worker::Worker(Context &c)
     : c_(c)

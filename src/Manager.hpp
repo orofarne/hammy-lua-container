@@ -10,7 +10,7 @@
 
 #include <boost/asio.hpp>
 
-namespace lutop {
+namespace hammy {
 
 class Manager {
     public:

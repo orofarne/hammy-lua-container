@@ -3,13 +3,13 @@
 #include "Context.hpp"
 
 TEST(Context, Empty) {
-    using namespace lutop;
+    using namespace hammy;
 
     Context c;
 }
 
 TEST(Context, Hello) {
-    using namespace lutop;
+    using namespace hammy;
 
     std::string code = "x = 'hello'\n";
 
@@ -22,7 +22,7 @@ TEST(Context, Hello) {
 
 
 TEST(Context, GetSetString) {
-    using namespace lutop;
+    using namespace hammy;
 
     Context c;
 
@@ -42,7 +42,7 @@ TEST(Context, GetSetString) {
 
 
 TEST(Context, LoadModule) {
-    using namespace lutop;
+    using namespace hammy;
 
     Context c;
 
@@ -57,7 +57,7 @@ TEST(Context, LoadModule) {
 }
 
 TEST(Context, Shadow) {
-    using namespace lutop;
+    using namespace hammy;
 
     Context c;
 
@@ -79,7 +79,7 @@ TEST(Context, Shadow) {
 }
 
 TEST(Context, MixTables) {
-    using namespace lutop;
+    using namespace hammy;
 
     Context c;
 
@@ -102,7 +102,7 @@ TEST(Context, MixTables) {
 }
 
 TEST(Context, FFI) {
-    using namespace lutop;
+    using namespace hammy;
 
     std::string code =
         "local ffi = require('ffi')\n"
@@ -123,7 +123,7 @@ TEST(Context, FFI) {
 }
 
 TEST(Context, BoolFromTable) {
-    using namespace lutop;
+    using namespace hammy;
 
     std::string code =
         "t = { a = true, b = false }\n"
@@ -139,7 +139,7 @@ TEST(Context, BoolFromTable) {
 }
 
 TEST(Context, IsNil) {
-    using namespace lutop;
+    using namespace hammy;
 
     std::string code =
         "t = { a = true, b = false }\n"
@@ -158,7 +158,7 @@ TEST(Context, IsNil) {
 }
 
 TEST(Context, Integer) {
-    using namespace lutop;
+    using namespace hammy;
 
     std::string code =
         "x = 10\n"

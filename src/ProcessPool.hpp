@@ -12,7 +12,7 @@
 
 #include <boost/asio/io_service.hpp>
 
-namespace lutop {
+namespace hammy {
 
 class ProcessPool {
     public:

@@ -2,7 +2,7 @@
 
 #include "ProcessPool.hpp"
 
-using namespace lutop;
+using namespace hammy;
 
 TEST(ProcessPool, Create) {
 

@@ -2,7 +2,7 @@
 
 #include "Context.hpp"
 
-namespace lutop {
+namespace hammy {
 
 class Worker {
     public:

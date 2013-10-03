@@ -2,7 +2,7 @@
 
 #include "luatools.hpp"
 
-namespace lutop {
+namespace hammy {
 
 class Context {
     public:

@@ -2,7 +2,7 @@
 
 #include "Value.hpp"
 
-namespace lutop {
+namespace hammy {
 
 struct Request {
     std::string func; // text

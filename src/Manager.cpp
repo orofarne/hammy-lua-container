@@ -22,7 +22,7 @@
         throw std::runtime_error(msg.str()); \
     }
 
-namespace lutop {
+namespace hammy {
 
 Manager::Manager(unsigned int pool_size, unsigned int max_count)
     : pp_(io_service_, c_, pool_size, max_count)

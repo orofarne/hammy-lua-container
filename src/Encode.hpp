@@ -5,7 +5,7 @@
 
 #include <memory>
 
-namespace lutop {
+namespace hammy {
 
 std::string encodeRequest(const Request &r);
 std::shared_ptr<Response> decodeResponse(std::string const &buf);

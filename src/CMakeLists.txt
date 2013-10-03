@@ -1,4 +1,4 @@
-add_library(lutop_lib STATIC
+add_library(hammy_lib STATIC
     Value.cpp
     Manager.cpp
     Context.cpp
@@ -14,14 +14,14 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lua_cmsgpack.c ${CMAKE_CURRENT_BINARY
 add_library(luacmsgpack_lib STATIC ${CMAKE_CURRENT_BINARY_DIR}/lua_cmsgpack.c)
 add_dependencies(luacmsgpack_lib luacmsgpack)
 
-add_executable(lutopd lutopd.cpp)
-add_dependencies(lutopd
-    lutop_lib
+add_executable(hammyd hammyd.cpp)
+add_dependencies(hammyd
+    hammy_lib
     luajit
     luacmsgpack_lib
 )
-target_link_libraries(lutopd
-    lutop_lib
+target_link_libraries(hammyd
+    hammy_lib
     luacmsgpack_lib
     ${Boost_LIBRARIES}
     ${LUAJIT_LIBRARY}
@@ -31,4 +31,4 @@ target_link_libraries(lutopd
     "dl"
 )
 
-install(TARGETS lutopd DESTINATION bin)
+install(TARGETS hammyd DESTINATION bin)

@@ -14,7 +14,7 @@
         throw std::runtime_error(msg); \
     }
 
-namespace lutop {
+namespace hammy {
 
 std::string encodeRequest(const Request &r) {
     std::shared_ptr<msgpack_sbuffer> buffer{msgpack_sbuffer_new(), &msgpack_sbuffer_free};

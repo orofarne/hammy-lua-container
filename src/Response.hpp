@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace lutop {
+namespace hammy {
 
 struct Response {
     std::string state; // binary

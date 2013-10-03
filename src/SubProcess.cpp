@@ -15,7 +15,7 @@
 
 #define BLOCK_SIZE 1024
 
-namespace lutop {
+namespace hammy {
 
 SubProcess::subprocess_error::~subprocess_error() {
 }

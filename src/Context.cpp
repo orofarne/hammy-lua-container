@@ -14,7 +14,7 @@
     } \
 }
 
-namespace lutop {
+namespace hammy {
 
 int
 Context::lIndexPass_(lua_State *L) {
@@ -64,7 +64,7 @@ Context::~Context() throw() {
 
 void
 Context::load(const char *code, size_t len) {
-    int rc = luaL_loadbuffer(L_, code, len, "lutop");
+    int rc = luaL_loadbuffer(L_, code, len, "hammy");
     LUTOP_ASSERT_EQ(rc, 0, "luaL_loadbuffer");
 
     rc = lua_pcall(L_, 0, 0, 0);
@@ -78,7 +78,7 @@ Context::load(const char *code, size_t len) {
 
 void
 Context::loadModule(const char *name, const char *code, size_t len) {
-    int rc = luaL_loadbuffer(L_, code, len, "lutop");
+    int rc = luaL_loadbuffer(L_, code, len, "hammy");
     LUTOP_ASSERT_EQ(rc, 0, "luaL_loadbuffer");
 
     rc = lua_pcall(L_, 0, 1, 0);
