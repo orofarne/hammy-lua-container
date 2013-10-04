@@ -24,11 +24,17 @@
 
 namespace hammy {
 
-Manager::Manager(unsigned int pool_size, unsigned int max_count)
-    : pp_(io_service_, c_, pool_size, max_count)
+Manager::Manager(Application &app)
+    : app_(app)
+    , io_service_(app_.ioService())
     , scheduler_timer_(io_service_)
 {
+    unsigned int pool_size =
+        app.config().get<unsigned int>("general.pool-size");
+    unsigned int worker_lifetime =
+        app.config().get<unsigned int>("general.worker-liftime");
 
+    pp_.reset(new ProcessPool{io_service_, c_, pool_size, worker_lifetime});
 }
 
 Manager::~Manager() throw() {
@@ -169,7 +175,7 @@ Manager::startModule(const Module &m) {
     // r->value = <nil>;
     r->timestamp = ::time(nullptr);
 
-    pp_.process(r, std::bind(&Manager::moduleCallback, this, m, ph::_1, ph::_2));
+    pp_->process(r, std::bind(&Manager::moduleCallback, this, m, ph::_1, ph::_2));
 }
 
 void

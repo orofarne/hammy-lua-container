@@ -3,32 +3,35 @@
 #include "Module.hpp"
 #include "Context.hpp"
 #include "ProcessPool.hpp"
+#include "Application.hpp"
 
 #include <string>
 #include <vector>
 #include <map>
-
-#include <boost/asio.hpp>
+#include <memory>
 
 namespace hammy {
 
 class Manager {
     public:
-        Manager(unsigned int pool_size, unsigned int max_count);
+        Manager(Application &app);
         ~Manager() throw();
 
         void loadFiles(std::vector<std::string> const &files);
         void run();
 
     private:
-        Context c_;
-        ProcessPool pp_;
-        std::vector<Module> modules_;
-        std::multimap<std::string, std::string> dependencies_;
+        Application &app_;
 
         // Boost::Asio staff
-        boost::asio::io_service io_service_;
+        boost::asio::io_service &io_service_;
         boost::asio::deadline_timer scheduler_timer_;
+
+
+        Context c_;
+        std::shared_ptr<ProcessPool> pp_;
+        std::vector<Module> modules_;
+        std::multimap<std::string, std::string> dependencies_;
 
     private:
         void runIter(const boost::system::error_code& error);

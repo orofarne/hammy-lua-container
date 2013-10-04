@@ -1,4 +1,5 @@
 add_library(hammy_lib STATIC
+    Application.cpp
     Value.cpp
     Manager.cpp
     Context.cpp
@@ -8,6 +9,7 @@ add_library(hammy_lib STATIC
     Module.cpp
     luatools.cpp
     Encode.cpp
+    PluginLoader.cpp
 )
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lua_cmsgpack.c ${CMAKE_CURRENT_BINARY_DIR}/lua_cmsgpack.c)
