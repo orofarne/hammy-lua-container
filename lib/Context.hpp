@@ -17,13 +17,8 @@ class Context {
         void setString(const char *name, const char *str);
         void setString(const char *name, const char *str, size_t len);
 
-        void mixTatables(const char *name1, const char *name2);
-
     private:
         lua_State *L_;
-
-    private:
-        static int lIndexPass_(lua_State *L);
 
     private:
         friend class Worker;

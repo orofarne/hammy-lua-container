@@ -17,6 +17,7 @@ using namespace hammy;
 
 TEST(Encode, enc1) {
     Request r;
+    r.module = "mymodule";
     r.func = "myfunc";
     r.state = "\x93\xa5Hello\xabMessagePack\xa5Hello";
     r.metric = "test_metric";
@@ -43,6 +44,7 @@ TEST(Encode, enc1) {
 
     std::string code = "local t = cmsgpack.unpack(buf)\n"
                        "res = true\n"
+                       "if t['module'] ~= 'mymodule' then res = false end\n"
                        "if t['func'] ~= 'myfunc' then res = false end\n"
                        "if t['metric'] ~= 'test_metric' then res = false end\n"
                        "if t['timestamp'] ~= 1380132909 then res = false end\n"
@@ -66,6 +68,7 @@ TEST(Encode, enc1) {
 
 TEST(Encode, enc2) {
     Request r;
+    r.module = "mymodule";
     r.func = "myfunc";
     r.state = "";
     r.metric = "test_metric";
@@ -92,6 +95,7 @@ TEST(Encode, enc2) {
 
     std::string code = "local t = cmsgpack.unpack(buf)\n"
                        "res = true\n"
+                       "if t['module'] ~= 'mymodule' then res = false end\n"
                        "if t['func'] ~= 'myfunc' then res = false end\n"
                        "if t['metric'] ~= 'test_metric' then res = false end\n"
                        "if t['timestamp'] ~= 1380132909 then res = false end\n"

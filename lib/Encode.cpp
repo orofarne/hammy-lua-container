@@ -20,7 +20,11 @@ std::string encodeRequest(const Request &r) {
     std::shared_ptr<msgpack_sbuffer> buffer{msgpack_sbuffer_new(), &msgpack_sbuffer_free};
     std::shared_ptr<msgpack_packer> pk{msgpack_packer_new(buffer.get(), msgpack_sbuffer_write), &msgpack_packer_free};
 
-    msgpack_pack_map(pk.get(), 5);
+    msgpack_pack_map(pk.get(), 6);
+    msgpack_pack_raw(pk.get(), 6);
+    msgpack_pack_raw_body(pk.get(), "module", 6);
+    msgpack_pack_raw(pk.get(), r.module.size());
+    msgpack_pack_raw_body(pk.get(), r.module.data(), r.module.size());
     msgpack_pack_raw(pk.get(), 4);
     msgpack_pack_raw_body(pk.get(), "func", 4);
     msgpack_pack_raw(pk.get(), r.func.size());
@@ -85,6 +89,7 @@ std::shared_ptr<Response> decodeResponse(std::string const &buf) {
     ASSERTPP(obj.type == MSGPACK_OBJECT_MAP);
 
     std::shared_ptr<Response> r{new Response};
+    r->timestamp = 0;
 
     for(int i = 0; i < obj.via.map.size; ++i) {
         msgpack_object key_obj = obj.via.map.ptr[i].key;

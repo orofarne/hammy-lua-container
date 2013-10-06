@@ -7,11 +7,15 @@
 
 #include <string.h>
 
-#define LUTOP_ASSERT_EQ(x, y, msg) { \
+#define HAMMY_ASSERT_EQ(x, y, msg, L) { \
     if((x) != (y)) { \
         std::ostringstream sstr; \
         sstr << msg << ": " \
             << #x << " is " << (x) << " (should be " << (y) << ")"; \
+        if(L != nullptr) { \
+            sstr << " Message: " << lua_tostring(L, -1); \
+            lua_pop(L, 1); \
+        } \
         throw std::runtime_error(sstr.str()); \
     } \
 }
@@ -19,29 +23,6 @@
 #include "lua/lua_global.hpp"
 
 namespace hammy {
-
-int
-Context::lIndexPass_(lua_State *L) {
-    int n = lua_gettop(L);
-    if (n != 2) {
-        lua_pushfstring(L, "lIndexPass_: invalid number of arguments %d (should be 2)", n);
-        lua_error(L);
-    }
-
-    int idx = -1;
-    if(!lua_isstring(L, idx)) {
-        lua_pushstring(L, "lIndexPass_: invalid argument");
-        lua_error(L);
-    }
-    const char *k = lua_tostring(L, idx);
-
-    const char *name2 = lua_tostring(L, lua_upvalueindex(1));
-
-    lua_getglobal(L, name2);
-    lua_getfield(L, -1, k);
-
-    return 1;
-}
 
 Context::Context()
     : L_(nullptr)
@@ -53,11 +34,11 @@ Context::Context()
 
     // cmsgpack
     int rc = luaopen_cmsgpack(L_);
-    LUTOP_ASSERT_EQ(rc, 1, "luaopen_cmsgpack");
+    HAMMY_ASSERT_EQ(rc, 1, "luaopen_cmsgpack", L_);
 
     // luajit
     rc = luaJIT_setmode(L_, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_ON);
-    LUTOP_ASSERT_EQ(rc, 1, "luaJIT_setmode");
+    HAMMY_ASSERT_EQ(rc, 1, "luaJIT_setmode", nullptr);
 
     // hammy_lua_global
     load(lua_global_code, strlen(lua_global_code));
@@ -72,7 +53,7 @@ Context::~Context() throw() {
 void
 Context::load(const char *code, size_t len) {
     int rc = luaL_loadbuffer(L_, code, len, "hammy");
-    LUTOP_ASSERT_EQ(rc, 0, "luaL_loadbuffer");
+    HAMMY_ASSERT_EQ(rc, 0, "luaL_loadbuffer", L_);
 
     rc = lua_pcall(L_, 0, 0, 0);
     if(rc) {
@@ -86,7 +67,7 @@ Context::load(const char *code, size_t len) {
 void
 Context::loadModule(const char *name, const char *code, size_t len) {
     int rc = luaL_loadbuffer(L_, code, len, "hammy");
-    LUTOP_ASSERT_EQ(rc, 0, "luaL_loadbuffer");
+    HAMMY_ASSERT_EQ(rc, 0, "luaL_loadbuffer", L_);
 
     rc = lua_pcall(L_, 0, 1, 0);
     if(rc) {
@@ -115,24 +96,6 @@ void
 Context::setString(const char *name, const char *str, size_t len) {
     lua_pushlstring(L_, str, len);
     lua_setglobal(L_, name);
-}
-
-void
-Context::mixTatables(const char *name1, const char *name2) {
-    // Find table
-    lua_getglobal(L_, name1);
-
-    // Prepare metatable
-    lua_newtable(L_);
-    lua_pushstring(L_, "__index");
-    lua_pushstring(L_, name2);
-    lua_pushcclosure(L_, &Context::lIndexPass_, 1);
-    lua_rawset(L_, -3);
-
-    // Set metatable
-    lua_setmetatable(L_, -2);
-
-    lua_pop(L_, 3);
 }
 
 }

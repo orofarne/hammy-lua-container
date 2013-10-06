@@ -78,29 +78,6 @@ TEST(Context, Shadow) {
     }
 }
 
-TEST(Context, MixTables) {
-    using namespace hammy;
-
-    Context c;
-
-    std::string code = "return { "
-        "myappend = function(self, str) self.foo = self.foo .. str end "
-        "}";
-    c.loadModule("mymodule", code.c_str(), code.length());
-
-    std::string code2 = "x = {foo = 'bar'}";
-    c.load(code2.c_str(), code2.length());
-
-    c.mixTatables("x", "mymodule");
-
-    std::string code3 = "x:myappend('bazz')\n"
-                        "str = x.foo\n";
-    c.load(code3.c_str(), code3.length());
-
-    std::string str = c["str"]->asString();
-    EXPECT_TRUE( str == "barbazz" );
-}
-
 TEST(Context, FFI) {
     using namespace hammy;
 
