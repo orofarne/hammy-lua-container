@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <string.h>
+
 #define LUTOP_ASSERT_EQ(x, y, msg) { \
     if((x) != (y)) { \
         std::ostringstream sstr; \
@@ -13,6 +15,8 @@
         throw std::runtime_error(sstr.str()); \
     } \
 }
+
+#include "lua/lua_global.hpp"
 
 namespace hammy {
 
@@ -54,6 +58,9 @@ Context::Context()
     // luajit
     rc = luaJIT_setmode(L_, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_ON);
     LUTOP_ASSERT_EQ(rc, 1, "luaJIT_setmode");
+
+    // hammy_lua_global
+    load(lua_global_code, strlen(lua_global_code));
 }
 
 Context::~Context() throw() {

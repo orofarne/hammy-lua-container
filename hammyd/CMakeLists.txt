@@ -9,6 +9,7 @@ add_dependencies(hammyd
 target_link_libraries(hammyd
     hammy_lib
     luacmsgpack_lib
+    hammy_lua_global
     ${Boost_LIBRARIES}
     ${LUAJIT_LIBRARY}
     ${MsgPack_LIBRARY}

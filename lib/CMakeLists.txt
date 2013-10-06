@@ -1,3 +1,5 @@
+add_subdirectory(lua)
+
 add_library(hammy_lib STATIC
     Application.cpp
     Value.cpp
@@ -14,4 +16,4 @@ add_library(hammy_lib STATIC
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lua_cmsgpack.c ${CMAKE_CURRENT_BINARY_DIR}/lua_cmsgpack.c)
 add_library(luacmsgpack_lib STATIC ${CMAKE_CURRENT_BINARY_DIR}/lua_cmsgpack.c)
-add_dependencies(luacmsgpack_lib luacmsgpack)
+add_dependencies(luacmsgpack_lib luacmsgpack hammy_lua_global)

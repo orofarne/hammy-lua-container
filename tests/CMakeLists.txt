@@ -18,6 +18,7 @@ add_dependencies(hammy_test
 target_link_libraries(hammy_test
   hammy_lib
   luacmsgpack_lib
+  hammy_lua_global
   ${GTEST_BOTH_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}

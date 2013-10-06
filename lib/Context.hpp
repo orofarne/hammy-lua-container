@@ -24,6 +24,9 @@ class Context {
 
     private:
         static int lIndexPass_(lua_State *L);
+
+    private:
+        friend class Worker;
 };
 
 }
