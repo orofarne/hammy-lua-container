@@ -175,15 +175,11 @@ Manager::startModule(const Module &m) {
     // r->value = <nil>;
     r->timestamp = ::time(nullptr);
 
-    pp_->process(r, std::bind(&Manager::moduleCallback, this, m, ph::_1, ph::_2));
+    pp_->process(r, std::bind(&Manager::moduleCallback, this, m, ph::_1));
 }
 
 void
-Manager::moduleCallback(const Module &m, std::shared_ptr<Response> r, const boost::system::error_code &err) {
-    if(err) {
-        throw std::runtime_error(err.message());
-    }
-
+Manager::moduleCallback(const Module &m, std::shared_ptr<Response> r) {
     auto ret = dependencies_.equal_range(m.name());
     for(auto it = ret.first; it != ret.second; ++it) {
         auto next_m_it = std::find_if(modules_.cbegin(), modules_.cend(),

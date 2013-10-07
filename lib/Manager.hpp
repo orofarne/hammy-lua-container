@@ -38,7 +38,7 @@ class Manager {
         void prepareModules();
         time_t startSomething();
         void startModule(const Module &m);
-        void moduleCallback(const Module &m, std::shared_ptr<Response> r, const boost::system::error_code &err);
+        void moduleCallback(const Module &m, std::shared_ptr<Response> r);
 };
 
 }

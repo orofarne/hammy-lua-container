@@ -25,7 +25,9 @@ class SubProcess {
         void fork();
 
         inline int downFd() { return pipefd_down_[1]; }
+        inline boost::asio::posix::stream_descriptor &downD() { return down_d_; }
         inline int upFd() { return pipefd_up_[0]; }
+        inline boost::asio::posix::stream_descriptor &upD() { return up_d_; }
 
     private:
         std::array<int, 2> pipefd_down_;

@@ -88,6 +88,9 @@ SubProcess::fork() {
 
         close(pipefd_down_[0]);
         close(pipefd_up_[1]);
+
+        up_d_.assign(pipefd_up_[0]);
+        down_d_.assign(pipefd_down_[1]);
     }
 }
 

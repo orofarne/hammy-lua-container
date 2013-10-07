@@ -9,7 +9,7 @@ class Worker {
         Worker(Context &c);
         ~Worker() throw();
 
-        void *operator()(void *in_buf, size_t in_size, size_t *out_buf);
+        void *operator()(void *in_buf, size_t in_size, size_t *out_size);
 
     private:
         Context &c_;
