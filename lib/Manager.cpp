@@ -29,12 +29,18 @@ Manager::Manager(Application &app)
     , io_service_(app_.ioService())
     , scheduler_timer_(io_service_)
 {
+    namespace ph=std::placeholders;
+
     unsigned int pool_size =
         app.config().get<unsigned int>("general.pool-size");
     unsigned int worker_lifetime =
         app.config().get<unsigned int>("general.worker-liftime");
 
     pp_.reset(new ProcessPool{io_service_, c_, pool_size, worker_lifetime});
+
+    app.bus().setCallback(
+            std::bind(&Manager::busCallback, this, ph::_1, ph::_2, ph::_3)
+        );
 }
 
 Manager::~Manager() throw() {
@@ -165,29 +171,35 @@ Manager::startSomething() {
 }
 
 void
-Manager::startModule(const Module &m) {
+Manager::startModule(const Module &m, Value v, time_t ts) {
     namespace ph=std::placeholders;
 
     std::shared_ptr<Request> r{new Request};
-    r->func = "timer";
+    r->func = (v.type() == Value::Type::Nil ? "onTimer" : "onData");
     r->state = ""; // FIXME ...
     r->metric = m.name();
-    // r->value = <nil>;
-    r->timestamp = ::time(nullptr);
+    r->value = v;
+    r->timestamp = (ts == 0 ? ::time(nullptr) : ts);
 
     pp_->process(r, std::bind(&Manager::moduleCallback, this, m, ph::_1));
 }
 
 void
 Manager::moduleCallback(const Module &m, std::shared_ptr<Response> r) {
-    auto ret = dependencies_.equal_range(m.name());
+    app_.bus().push(m.name(), r->value,
+            (r->timestamp == 0 ? ::time(nullptr) : r->timestamp));
+}
+
+void
+Manager::busCallback(std::string metric, Value value, time_t timestamp) {
+    auto ret = dependencies_.equal_range(metric);
     for(auto it = ret.first; it != ret.second; ++it) {
         auto next_m_it = std::find_if(modules_.cbegin(), modules_.cend(),
                 [&it](const Module &im) -> bool {
                     return im.name() == it->second;
                 }
             );
-        startModule(*next_m_it);
+        startModule(*next_m_it, value, timestamp);
     }
 }
 

@@ -5,6 +5,7 @@ project(hammy C CXX)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 OPTION(TESTS "enable_testing" ON)
+OPTION(PLUGINS "enable_std_plugins" ON)
 
 # Initialize FLAGS.
 set(CMAKE_CXX_FLAGS                "-Wall -std=c++11")
@@ -52,6 +53,12 @@ include_directories(${MsgPack_INCLUDE_DIRS})
 # Code
 add_subdirectory(lib)
 add_subdirectory(hammyd)
+
+# Std plugins
+if(PLUGINS)
+    find_package(LevelDB REQUIRED)
+    add_subdirectory(plugins)
+endif(PLUGINS)
 
 # GTest magic
 if(TESTS)

@@ -23,4 +23,19 @@ Application::loadPlugin(std::string const &file) {
         throw std::runtime_error("Plugin is null");
 }
 
+Bus &
+Application::bus() {
+    if(!bus_)
+        throw std::runtime_error("Bus plugin is not configured");
+    return *bus_;
+}
+
+StateKeeper &
+Application::stateKeeper() {
+    if(!state_keeper_)
+        throw std::runtime_error("StateKeeper plugin is not configured");
+    return *state_keeper_;
+}
+
+
 }

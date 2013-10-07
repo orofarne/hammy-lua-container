@@ -105,8 +105,6 @@ smain(int argc, char *argv[]) {
 
     hammy::Application app{config};
 
-    // TODO: plugins
-
     hammy::Manager m{app};
 
     m.loadFiles(files);
