@@ -37,8 +37,8 @@ class Manager {
         void runIter(const boost::system::error_code& error);
         void prepareModules();
         time_t startSomething();
-        void startModule(const Module &m, Value v = Value(), time_t ts = 0);
-        void moduleCallback(const Module &m, std::shared_ptr<Response> r);
+        void startModule(Module &m, Value v = Value(), time_t ts = 0);
+        void moduleCallback(Module &m, std::shared_ptr<Response> r);
         void busCallback(std::string metric, Value value, time_t timestamp);
 };
 

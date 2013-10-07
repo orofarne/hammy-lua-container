@@ -41,6 +41,9 @@ class LevelDBStateKeeper : public StateKeeper {
             std::string res;
 
             leveldb::Status s = db_->Get(leveldb::ReadOptions(), metric, &res);
+            if(s.IsNotFound())
+                return std::string{};
+
             if(!s.ok()) {
                 std::string msg{"leveldb get error: "};
                 msg += s.ToString();

@@ -95,7 +95,8 @@ smain(int argc, char *argv[]) {
     {
         std::vector<std::string> dirs;
 
-        auto dr = config.equal_range("general.config-path");
+        auto h_cfg = config.get_child("hammy");
+        auto dr = h_cfg.equal_range("trigger_path");
         for(auto it = dr.first; it != dr.second; ++it) {
             dirs.push_back(it->second.get_value<std::string>());
         }

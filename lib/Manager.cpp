@@ -94,6 +94,8 @@ Manager::run() {
 
 void
 Manager::runIter(const boost::system::error_code &error) {
+    std::cerr << __FUNCTION__ << std::endl;
+
     if(error) {
         throw std::runtime_error(error.message());
     }
@@ -102,6 +104,9 @@ Manager::runIter(const boost::system::error_code &error) {
     while(t == 0) {
         t = startSomething();
     }
+
+    if(t == std::numeric_limits<decltype(t)>::max())
+        return;
 
     scheduler_timer_.expires_from_now(boost::posix_time::seconds(t));
     scheduler_timer_.async_wait(
@@ -112,22 +117,26 @@ Manager::runIter(const boost::system::error_code &error) {
 void
 Manager::prepareModules() {
     for(Module &m : modules_) {
-        auto m_table = c_[m.name().c_str()]->asTable();
+        if(c_[m.name().c_str()]->isNil())
+            continue;
+
+        auto m_table = c_[m.name().c_str()];
         // Disabled
-        if(m_table->get("disabled"))
+        if(!m_table->asTable()->get("disabled")->isNil() && m_table->asTable()->get("disabled")->asBool())
             m.disable();
 
         // Periodic
         bool is_num = false;
-        time_t t = m_table->get("periodic")->asInteger(&is_num);
+        time_t t = m_table->asTable()->get("period")->asInteger(&is_num);
         if(is_num)
             m.setPeriod(t);
+        std::cerr << "period: " << t << " (" << is_num << ", " << m_table->asTable()->get("period")->isNil() << ")" << std::endl;
 
         // Dependencies
-        if(!m_table->get("dependencies")->isNil()) {
-            auto d_table = m_table->get("dependencies")->asTable();
+        if(!m_table->asTable()->get("dependencies")->isNil()) {
+            auto d_table = m_table->asTable()->get("dependencies");
             for(unsigned int i = 1; i < std::numeric_limits<decltype(i)>::max(); ++i) {
-                std::string dep = d_table->get((std::to_string(i)).c_str())->asString();
+                std::string dep = d_table->asTable()->get((std::to_string(i)).c_str())->asString();
 
                 // Check dependency is valid
                 if(std::find_if(modules_.cbegin(), modules_.cend(), [&dep](const Module &im) -> bool {
@@ -148,17 +157,25 @@ Manager::prepareModules() {
 
 time_t
 Manager::startSomething() {
+    std::cerr << __FUNCTION__ << std::endl;
     time_t now = ::time(nullptr);
     time_t wait;
     wait = std::numeric_limits<decltype(wait)>::max();
 
     for(Module &m : modules_) {
-        if(m.status() != Module::Status::Wait || m.period() == 0)
+        std::cerr << "module " << m.name() << '\t' << m.period() << std::endl;
+        if(m.status() == Module::Status::Disabled || m.period() == 0)
             continue;
 
+        std::cerr << "-- line " << __LINE__ << std::endl;
         if(m.nextRun() <= now) {
-            startModule(m);
-            wait = 0;
+            if(m.status() == Module::Status::Wait) {
+                startModule(m);
+                wait = 0;
+            }
+            else if(m.period() < wait) {
+                wait = m.period();
+            }
         }
         else {
             time_t d = m.nextRun() - now;
@@ -166,17 +183,23 @@ Manager::startSomething() {
                 wait = d;
         }
     }
+    std::cerr << "wait = " << wait << std::endl;
 
     return wait;
 }
 
 void
-Manager::startModule(const Module &m, Value v, time_t ts) {
+Manager::startModule(Module &m, Value v, time_t ts) {
+    std::cerr << __FUNCTION__ << std::endl;
+
     namespace ph=std::placeholders;
+
+    m.start();
 
     std::shared_ptr<Request> r{new Request};
     r->func = (v.type() == Value::Type::Nil ? "onTimer" : "onData");
     r->state = app_.stateKeeper().get(m.name());
+    r->module = m.name();
     r->metric = m.name();
     r->value = v;
     r->timestamp = (ts == 0 ? ::time(nullptr) : ts);
@@ -185,19 +208,21 @@ Manager::startModule(const Module &m, Value v, time_t ts) {
 }
 
 void
-Manager::moduleCallback(const Module &m, std::shared_ptr<Response> r) {
+Manager::moduleCallback(Module &m, std::shared_ptr<Response> r) {
     // TODO: fix race condition here
     app_.stateKeeper().set(m.name(), r->state);
 
     app_.bus().push(m.name(), r->value,
             (r->timestamp == 0 ? ::time(nullptr) : r->timestamp));
+
+    m.stop();
 }
 
 void
 Manager::busCallback(std::string metric, Value value, time_t timestamp) {
     auto ret = dependencies_.equal_range(metric);
     for(auto it = ret.first; it != ret.second; ++it) {
-        auto next_m_it = std::find_if(modules_.cbegin(), modules_.cend(),
+        auto next_m_it = std::find_if(modules_.begin(), modules_.end(),
                 [&it](const Module &im) -> bool {
                     return im.name() == it->second;
                 }

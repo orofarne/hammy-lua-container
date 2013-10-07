@@ -7,6 +7,8 @@ namespace hammy {
 class LuaTable;
 
 class LuaValue {
+    private:
+        LuaValue(LuaValue const &) {}
     public:
         LuaValue(lua_State *L);
         ~LuaValue() throw();
