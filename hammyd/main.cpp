@@ -39,16 +39,16 @@ loadConfig(int argc, char *argv[], boost::property_tree::ptree &config) {
     std::string config_file = vm["config"].as< std::string >();
     fs::path p(config_file);
 
-    if(p.extension() == "xml") {
+    if(p.extension() == ".xml") {
         read_xml(config_file, config);
     }
-    else if(p.extension() == "json") {
+    else if(p.extension() == ".json") {
         read_json(config_file, config);
     }
-    else if(p.extension() == "ini") {
+    else if(p.extension() == ".ini") {
         read_ini(config_file, config);
     }
-    else if(p.extension() == "info") {
+    else if(p.extension() == ".info") {
         read_info(config_file, config);
     }
     else {

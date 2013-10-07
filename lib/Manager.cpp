@@ -31,10 +31,10 @@ Manager::Manager(Application &app)
 {
     namespace ph=std::placeholders;
 
-    unsigned int pool_size =
-        app.config().get<unsigned int>("general.pool-size");
-    unsigned int worker_lifetime =
-        app.config().get<unsigned int>("general.worker-liftime");
+    auto h_cfg = app.config().get_child("hammy");
+
+    unsigned int pool_size = h_cfg.get<unsigned int>("pool_size");
+    unsigned int worker_lifetime = h_cfg.get<unsigned int>("worker_lifetime");
 
     pp_.reset(new ProcessPool{io_service_, c_, pool_size, worker_lifetime});
 
