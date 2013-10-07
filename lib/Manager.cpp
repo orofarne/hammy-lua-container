@@ -176,7 +176,7 @@ Manager::startModule(const Module &m, Value v, time_t ts) {
 
     std::shared_ptr<Request> r{new Request};
     r->func = (v.type() == Value::Type::Nil ? "onTimer" : "onData");
-    r->state = ""; // FIXME ...
+    r->state = app_.stateKeeper().get(m.name());
     r->metric = m.name();
     r->value = v;
     r->timestamp = (ts == 0 ? ::time(nullptr) : ts);
@@ -186,6 +186,9 @@ Manager::startModule(const Module &m, Value v, time_t ts) {
 
 void
 Manager::moduleCallback(const Module &m, std::shared_ptr<Response> r) {
+    // TODO: fix race condition here
+    app_.stateKeeper().set(m.name(), r->state);
+
     app_.bus().push(m.name(), r->value,
             (r->timestamp == 0 ? ::time(nullptr) : r->timestamp));
 }

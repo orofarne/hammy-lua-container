@@ -58,6 +58,7 @@ add_subdirectory(hammyd)
 if(PLUGINS)
     find_package(LevelDB REQUIRED)
     add_subdirectory(plugins)
+    add_subdirectory(example)
 endif(PLUGINS)
 
 # GTest magic

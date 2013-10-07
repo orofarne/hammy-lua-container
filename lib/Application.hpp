@@ -27,7 +27,8 @@ class Application {
         StateKeeper &stateKeeper();
 
     private:
-        void loadPlugin(std::string const &file);
+         std::shared_ptr<Plugin> loadPlugin(std::string const &file,
+                                                std::string const &section);
 
     private:
         // Boost.Asio staff
@@ -38,10 +39,9 @@ class Application {
 
         // Plugins
         PluginLoader loader_;
-        std::map<std::string, std::shared_ptr<Plugin>> plugins_;
 
-        std::shared_ptr<Bus> bus_;
-        std::shared_ptr<StateKeeper> state_keeper_;
+        std::shared_ptr<Plugin> bus_;
+        std::shared_ptr<Plugin> state_keeper_;
 };
 
 }
