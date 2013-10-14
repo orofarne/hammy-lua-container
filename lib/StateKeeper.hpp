@@ -9,8 +9,8 @@ class StateKeeper : public Plugin {
         StateKeeper() {}
         virtual ~StateKeeper() throw() {}
 
-        virtual void set(std::string metric, std::string buffer) = 0;
-        virtual std::string get(std::string metric) = 0;
+        virtual void set(std::string host, std::string metric, std::string buffer) = 0;
+        virtual void get(std::string host, std::string metric, std::string *buffer) = 0;
 };
 
 }

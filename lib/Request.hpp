@@ -5,10 +5,10 @@
 namespace hammy {
 
 struct Request {
-    std::string module; // text
+    std::string host; // text
+    std::string metric; // text
     std::string func; // text
     std::string state; // binary
-    std::string metric; // text
     Value value;
     time_t timestamp;
 };

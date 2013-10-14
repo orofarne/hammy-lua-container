@@ -28,7 +28,7 @@ class LevelDBStateKeeper : public StateKeeper {
                 delete db_;
         }
 
-        virtual void set(std::string metric, std::string buffer) {
+        virtual void set(std::string host, std::string metric, std::string buffer) {
             leveldb::Status s = db_->Put(leveldb::WriteOptions(), metric, buffer);
             if(!s.ok()) {
                 std::string msg{"leveldb put error: "};
@@ -37,20 +37,16 @@ class LevelDBStateKeeper : public StateKeeper {
             }
         }
 
-        virtual std::string get(std::string metric) {
-            std::string res;
-
-            leveldb::Status s = db_->Get(leveldb::ReadOptions(), metric, &res);
+        virtual void get(std::string host, std::string metric, std::string *buffer) {
+            leveldb::Status s = db_->Get(leveldb::ReadOptions(), metric, buffer);
             if(s.IsNotFound())
-                return std::string{};
+                *buffer = std::string{};
 
             if(!s.ok()) {
                 std::string msg{"leveldb get error: "};
                 msg += s.ToString();
                 throw std::runtime_error(msg);
             }
-
-            return res;
         }
 };
 

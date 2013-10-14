@@ -2,6 +2,8 @@
 
 #include "Context.hpp"
 
+#include <boost/lexical_cast.hpp>
+
 TEST(Context, Empty) {
     using namespace hammy;
 
@@ -161,3 +163,80 @@ TEST(Context, Integer) {
     EXPECT_EQ(0, c["foo"]->asInteger(&isnum));
     EXPECT_FALSE(isnum);
 }
+
+TEST(Context, Number) {
+    using namespace hammy;
+
+    std::string code =
+        "x = 10\n"
+        "y = 3.14\n"
+        "z = 'hello'"
+        ;
+
+
+    Context c;
+    c.load(code.c_str(), code.length());
+
+    bool isnum = false;
+
+    EXPECT_DOUBLE_EQ(10, c["x"]->asNumber(&isnum));
+    EXPECT_TRUE(isnum);
+
+    EXPECT_DOUBLE_EQ(3.14, c["y"]->asNumber(&isnum));
+    EXPECT_TRUE(isnum);
+
+    EXPECT_DOUBLE_EQ(0, c["z"]->asNumber(&isnum));
+    EXPECT_FALSE(isnum);
+
+    EXPECT_DOUBLE_EQ(0, c["foo"]->asNumber(&isnum));
+    EXPECT_FALSE(isnum);
+}
+
+
+TEST(Context, CrazyTest) {
+    using namespace hammy;
+
+    int N = std::numeric_limits<int>::max() / 4;
+
+    Context c;
+
+    for(int i = 0; i < N; ++i) {
+        std::ostringstream code_s;
+        code_s << "table_" << i << " = {\n"
+            << "\tmyfunc = function(x, y, z)\n"
+            << "\t\tlocal res = x + y + z - " << i*i << " + 7\n"
+            << "\t\treturn res\n"
+            << "\tend\n"
+            << "}\n";
+
+        std::string code = code_s.str();
+        c.load(code.c_str(), code.length());
+    }
+
+    double a = 0.;
+    for(int i = 0; i < N; ++i) {
+        int x = i;
+        int y = N - i;
+        int z = 2 * i;
+        int res = x + y + z - i * i + 7;
+        a += res;
+    }
+
+    std::ostringstream code_s;
+    code_s << "N = " << N << "\n"
+        << "b = 0\n"
+        << "for i = 0, N - 1, 1 do\n"
+        << "\tlocal x = i\n"
+        << "\tlocal y = N - i\n"
+        << "\tlocal z = 2 * i\n"
+        << "\tlocal key = 'table_' .. i\n"
+        << "\tb = b + _G[key].myfunc(x, y, z)\n"
+        << "end";
+
+    std::string code = code_s.str();
+    c.load(code.c_str(), code.length());
+
+    bool is_number = false;
+    EXPECT_DOUBLE_EQ(a, c["b"]->asNumber(&is_number));
+    EXPECT_TRUE(is_number);
+ }

@@ -21,18 +21,18 @@ std::string encodeRequest(const Request &r) {
     std::shared_ptr<msgpack_packer> pk{msgpack_packer_new(buffer.get(), msgpack_sbuffer_write), &msgpack_packer_free};
 
     msgpack_pack_map(pk.get(), 6);
-    msgpack_pack_raw(pk.get(), 6);
-    msgpack_pack_raw_body(pk.get(), "module", 6);
-    msgpack_pack_raw(pk.get(), r.module.size());
-    msgpack_pack_raw_body(pk.get(), r.module.data(), r.module.size());
     msgpack_pack_raw(pk.get(), 4);
-    msgpack_pack_raw_body(pk.get(), "func", 4);
-    msgpack_pack_raw(pk.get(), r.func.size());
-    msgpack_pack_raw_body(pk.get(), r.func.data(), r.func.size());
+    msgpack_pack_raw_body(pk.get(), "host", 4);
+    msgpack_pack_raw(pk.get(), r.host.size());
+    msgpack_pack_raw_body(pk.get(), r.host.data(), r.host.size());
     msgpack_pack_raw(pk.get(), 6);
     msgpack_pack_raw_body(pk.get(), "metric", 6);
     msgpack_pack_raw(pk.get(), r.metric.size());
     msgpack_pack_raw_body(pk.get(), r.metric.data(), r.metric.size());
+    msgpack_pack_raw(pk.get(), 4);
+    msgpack_pack_raw_body(pk.get(), "func", 4);
+    msgpack_pack_raw(pk.get(), r.func.size());
+    msgpack_pack_raw_body(pk.get(), r.func.data(), r.func.size());
     msgpack_pack_raw(pk.get(), 9);
     msgpack_pack_raw_body(pk.get(), "timestamp", 9);
     msgpack_pack_uint64(pk.get(), r.timestamp);

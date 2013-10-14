@@ -26,6 +26,7 @@ namespace hammy {
 
 Manager::Manager(Application &app)
     : app_(app)
+    , timer_(app_)
     , io_service_(app_.ioService())
     , scheduler_timer_(io_service_)
 {
@@ -39,7 +40,8 @@ Manager::Manager(Application &app)
     pp_.reset(new ProcessPool{io_service_, c_, pool_size, worker_lifetime});
 
     app.bus().setCallback(
-            std::bind(&Manager::busCallback, this, ph::_1, ph::_2, ph::_3)
+            std::bind(&Manager::busCallback, this,
+                        ph::_1, ph::_2, ph::_3, ph::_4)
         );
 }
 
@@ -136,7 +138,12 @@ Manager::prepareModules() {
         if(!m_table->asTable()->get("dependencies")->isNil()) {
             auto d_table = m_table->asTable()->get("dependencies");
             for(unsigned int i = 1; i < std::numeric_limits<decltype(i)>::max(); ++i) {
+                if(d_table->asTable()->get((std::to_string(i)).c_str())->isNil())
+                    break;
+
                 std::string dep = d_table->asTable()->get((std::to_string(i)).c_str())->asString();
+
+                std::cerr << dep << " -> " << m.name() << std::endl;
 
                 // Check dependency is valid
                 if(std::find_if(modules_.cbegin(), modules_.cend(), [&dep](const Module &im) -> bool {
@@ -198,28 +205,32 @@ Manager::startModule(Module &m, Value v, time_t ts) {
 
     std::shared_ptr<Request> r{new Request};
     r->func = (v.type() == Value::Type::Nil ? "onTimer" : "onData");
-    r->state = app_.stateKeeper().get(m.name());
-    r->module = m.name();
+    app_.stateKeeper().get("localhost", m.name(), &r->state); // FIXME
+    r->host = "localhost"; // FIXME
     r->metric = m.name();
     r->value = v;
     r->timestamp = (ts == 0 ? ::time(nullptr) : ts);
 
-    pp_->process(r, std::bind(&Manager::moduleCallback, this, m, ph::_1));
+    pp_->process(r, std::bind(&Manager::requestCallback, this, r, ph::_1));
 }
 
 void
-Manager::moduleCallback(Module &m, std::shared_ptr<Response> r) {
+Manager::requestCallback(std::shared_ptr<Request> req,
+                         std::shared_ptr<Response> res)
+{
     // TODO: fix race condition here
-    app_.stateKeeper().set(m.name(), r->state);
+    app_.stateKeeper().set(req->host, req->metric, res->state);
 
-    app_.bus().push(m.name(), r->value,
-            (r->timestamp == 0 ? ::time(nullptr) : r->timestamp));
+    app_.bus().push(req->host, req->metric, res->value,
+            (res->timestamp == 0 ? ::time(nullptr) : res->timestamp));
 
-    m.stop();
+    //m.stop(); FIXME
 }
 
 void
-Manager::busCallback(std::string metric, Value value, time_t timestamp) {
+Manager::busCallback(std::string host, std::string metric,
+        Value value, time_t timestamp)
+{
     auto ret = dependencies_.equal_range(metric);
     for(auto it = ret.first; it != ret.second; ++it) {
         auto next_m_it = std::find_if(modules_.begin(), modules_.end(),

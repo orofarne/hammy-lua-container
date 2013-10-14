@@ -5,7 +5,7 @@
 function hammy_process_request()
     __response = {}
 
-    local module = _G[__request.module]
+    local module = _G[__request.metric]
     local state = __request.state or {}
     local mt = {
         __index = function(t, key)

@@ -31,9 +31,9 @@ TEST(ProcessPool, Test1) {
 
     for(int i = 0; i < 30; ++i) {
         std::shared_ptr<Request> req{new Request};
-        req->module = "mymodule";
+        req->host = "myhost";
         req->func = "onData";
-        req->metric = "test_metric";
+        req->metric = "mymodule";
         req->state = state;
         req->value = Value(Value::Type::Numeric, 5);
         req->timestamp = 1380132909 + 2 * i;

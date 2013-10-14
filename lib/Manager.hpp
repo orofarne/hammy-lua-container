@@ -4,6 +4,7 @@
 #include "Context.hpp"
 #include "ProcessPool.hpp"
 #include "Application.hpp"
+#include "Timer.hpp"
 
 #include <string>
 #include <vector>
@@ -22,6 +23,7 @@ class Manager {
 
     private:
         Application &app_;
+        Timer timer_;
 
         // Boost::Asio staff
         boost::asio::io_service &io_service_;
@@ -38,8 +40,10 @@ class Manager {
         void prepareModules();
         time_t startSomething();
         void startModule(Module &m, Value v = Value(), time_t ts = 0);
-        void moduleCallback(Module &m, std::shared_ptr<Response> r);
-        void busCallback(std::string metric, Value value, time_t timestamp);
+        void requestCallback(std::shared_ptr<Request> req,
+                             std::shared_ptr<Response> res);
+        void busCallback(std::string host, std::string metric,
+                            Value value, time_t timestamp);
 };
 
 }

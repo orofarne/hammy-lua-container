@@ -12,6 +12,7 @@ add_library(hammy_lib STATIC
     luatools.cpp
     Encode.cpp
     PluginLoader.cpp
+    Timer.cpp
 )
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/lua_cmsgpack.c ${CMAKE_CURRENT_BINARY_DIR}/lua_cmsgpack.c)

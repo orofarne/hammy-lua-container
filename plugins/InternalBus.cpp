@@ -11,10 +11,11 @@ class InternalBus : public Bus {
         InternalBus() {}
         virtual ~InternalBus() throw() {}
 
-        virtual void push(std::string metric, Value value, time_t timestamp) {
-            std::cout << metric << "\t" << value.as<std::string>() << std::endl;
+        virtual void push(std::string host, std::string metric, Value value, time_t timestamp) {
+            std::cout << host << "\t" << metric << "\t"
+                << value.as<std::string>() << std::endl;
 
-            callback_(metric, value, timestamp);
+            callback_(host, metric, value, timestamp);
         }
 
         virtual void setCallback(BusCallback callback) {

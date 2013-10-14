@@ -30,6 +30,15 @@ LuaValue::asInteger(bool *is_num) {
     return res;
 }
 
+lua_Number
+LuaValue::asNumber(bool *is_num) {
+    if(is_num)
+        *is_num = (bool)lua_isnumber(L_, -1);
+
+    lua_Number res = lua_tonumber(L_, -1);
+    return res;
+}
+
 bool
 LuaValue::asBool() {
     return lua_toboolean(L_, -1);
