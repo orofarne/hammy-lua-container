@@ -15,6 +15,21 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <time.h>
+
+// Warning! Not thread-safe!
+#define THROW_ERRNO(comment) { \
+        std::ostringstream msg; \
+        msg << "Error " << errno << " " << comment << ": " << strerror(errno); \
+        throw std::runtime_error(msg.str()); \
+    }
 
 static int
 loadConfig(int argc, char *argv[], boost::property_tree::ptree &config) {
@@ -82,6 +97,28 @@ getFiles(std::vector<std::string> &files, std::vector<std::string> const &dirs) 
     }
 }
 
+static void
+loadFiles(std::vector<std::string> const &files, hammy::Manager &m) {
+    for(std::string const &file : files) {
+        int fd = open(file.c_str(), O_RDONLY);
+        if(fd < 0)
+            THROW_ERRNO("open");
+
+        struct stat statbuf;
+        if ( fstat(fd, &statbuf) < 0 )
+            THROW_ERRNO("fstat");
+
+        void *data = mmap(0, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
+        if (data == MAP_FAILED)
+            THROW_ERRNO("mmap");
+
+        m.preload((const char *)data, statbuf.st_size);
+
+        if (munmap(data, statbuf.st_size))
+            THROW_ERRNO("munmap");
+    }
+}
+
 int
 smain(int argc, char *argv[]) {
     boost::property_tree::ptree config;
@@ -96,7 +133,7 @@ smain(int argc, char *argv[]) {
         std::vector<std::string> dirs;
 
         auto h_cfg = config.get_child("hammy");
-        auto dr = h_cfg.equal_range("trigger_path");
+        auto dr = h_cfg.equal_range("preload");
         for(auto it = dr.first; it != dr.second; ++it) {
             dirs.push_back(it->second.get_value<std::string>());
         }
@@ -108,7 +145,7 @@ smain(int argc, char *argv[]) {
 
     hammy::Manager m{app};
 
-    m.loadFiles(files);
+    loadFiles(files, m);
 
     m.run();
 

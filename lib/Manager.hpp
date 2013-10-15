@@ -18,8 +18,8 @@ class Manager {
         Manager(Application &app);
         ~Manager() throw();
 
-        void loadFiles(std::vector<std::string> const &files);
         void run();
+        void preload(const char *buf, size_t size);
 
     private:
         Application &app_;
@@ -36,10 +36,6 @@ class Manager {
         std::multimap<std::string, std::string> dependencies_;
 
     private:
-        void runIter(const boost::system::error_code& error);
-        void prepareModules();
-        time_t startSomething();
-        void startModule(Module &m, Value v = Value(), time_t ts = 0);
         void requestCallback(std::shared_ptr<Request> req,
                              std::shared_ptr<Response> res);
         void busCallback(std::string host, std::string metric,

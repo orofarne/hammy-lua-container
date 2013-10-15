@@ -6,6 +6,8 @@
 
 using namespace hammy;
 
+#if 0
+
 TEST(ProcessPool, Create) {
     boost::asio::io_service io_service;
     Context c{};
@@ -62,3 +64,5 @@ TEST(ProcessPool, Test1) {
     EXPECT_FALSE(state.empty());
     ASSERT_EQ(30, k);
 }
+
+#endif

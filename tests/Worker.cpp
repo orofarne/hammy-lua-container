@@ -19,7 +19,6 @@ TEST(Worker, Test1) {
     "       return this.x\n"
     "   end\n"
     "}\n";
-    c.loadModule("mymodule", code.c_str(), code.length());
 
     Worker w{c};
 
@@ -29,10 +28,11 @@ TEST(Worker, Test1) {
         Request req;
         req.host = "myhost";
         req.func = "onData";
-        req.metric = "mymodule";
+        req.metric = "mymetric";
         req.state = state;
         req.value = Value(Value::Type::Numeric, 5);
         req.timestamp = 1380132909 + 2 * i;
+        req.code = code;
 
         std::string req_bin = encodeRequest(req);
         ASSERT_GT(req_bin.size(), 0);

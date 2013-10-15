@@ -20,7 +20,7 @@ std::string encodeRequest(const Request &r) {
     std::shared_ptr<msgpack_sbuffer> buffer{msgpack_sbuffer_new(), &msgpack_sbuffer_free};
     std::shared_ptr<msgpack_packer> pk{msgpack_packer_new(buffer.get(), msgpack_sbuffer_write), &msgpack_packer_free};
 
-    msgpack_pack_map(pk.get(), 6);
+    msgpack_pack_map(pk.get(), 7);
     msgpack_pack_raw(pk.get(), 4);
     msgpack_pack_raw_body(pk.get(), "host", 4);
     msgpack_pack_raw(pk.get(), r.host.size());
@@ -36,6 +36,10 @@ std::string encodeRequest(const Request &r) {
     msgpack_pack_raw(pk.get(), 9);
     msgpack_pack_raw_body(pk.get(), "timestamp", 9);
     msgpack_pack_uint64(pk.get(), r.timestamp);
+    msgpack_pack_raw(pk.get(), 4);
+    msgpack_pack_raw_body(pk.get(), "code", 4);
+    msgpack_pack_raw(pk.get(), r.code.size());
+    msgpack_pack_raw_body(pk.get(), r.code.data(), r.code.size());
 
     msgpack_pack_raw(pk.get(), 5);
     msgpack_pack_raw_body(pk.get(), "value", 5);

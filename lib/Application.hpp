@@ -5,6 +5,7 @@
 
 #include "Bus.hpp"
 #include "StateKeeper.hpp"
+#include "CodeLoader.hpp"
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/asio.hpp>
@@ -25,6 +26,7 @@ class Application {
 
         Bus &bus();
         StateKeeper &stateKeeper();
+        CodeLoader &codeLoader();
 
     private:
          std::shared_ptr<Plugin> loadPlugin(std::string const &file,
@@ -42,6 +44,7 @@ class Application {
 
         std::shared_ptr<Plugin> bus_;
         std::shared_ptr<Plugin> state_keeper_;
+        std::shared_ptr<Plugin> code_loader_;
 };
 
 }

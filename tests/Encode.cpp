@@ -23,6 +23,7 @@ TEST(Encode, enc1) {
     r.state = "\x93\xa5Hello\xabMessagePack\xa5Hello";
     r.value = Value(Value::Type::Numeric, 3.14);
     r.timestamp = 1380132909;
+    r.code = "abcd";
 
     std::string buf = encodeRequest(r);
 
@@ -52,6 +53,7 @@ TEST(Encode, enc1) {
                        "if t['state'][1] ~= 'Hello' then res = false end\n"
                        "if t['state'][2] ~= 'MessagePack' then res = false end\n"
                        "if t['state'][3] ~= 'Hello' then res = false end\n"
+                       "if t['code'] ~= 'abcd' then res = false end\n"
                        ;
     rc = luaL_loadbuffer(L, code.c_str(), code.length(), "enc1");
     ASSERT_EQ(0, rc);
@@ -74,6 +76,7 @@ TEST(Encode, enc2) {
     r.metric = "test_metric";
     r.value = Value(Value::Type::Table, std::string("\x93\xa5Hello\xabMessagePack\xa5Hello"));
     r.timestamp = 1380132909;
+    r.code = "abcd";
 
     std::string buf = encodeRequest(r);
 
@@ -103,6 +106,7 @@ TEST(Encode, enc2) {
                        "if t['value'][1] ~= 'Hello' then res = false end\n"
                        "if t['value'][2] ~= 'MessagePack' then res = false end\n"
                        "if t['value'][3] ~= 'Hello' then res = false end\n"
+                       "if t['code'] ~= 'abcd' then res = false end\n"
                        ;
     rc = luaL_loadbuffer(L, code.c_str(), code.length(), "enc2");
     ASSERT_EQ(0, rc);

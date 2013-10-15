@@ -21,6 +21,12 @@ Application::Application(boost::property_tree::ptree &config)
                                                                         + ".so",
         h_cfg.get<std::string>("state_keeper_plugin")
     );
+
+    state_keeper_ = loadPlugin(
+        plugin_path + "/lib" + h_cfg.get<std::string>("code_loader_plugin")
+                                                                        + ".so",
+        h_cfg.get<std::string>("code_loader_plugin")
+    );
 }
 
 Application::~Application() throw() {
@@ -54,5 +60,11 @@ Application::stateKeeper() {
     return dynamic_cast<StateKeeper &>(*state_keeper_);
 }
 
+CodeLoader &
+Application::codeLoader() {
+    if(!code_loader_)
+        throw std::runtime_error("CodeLoader plugin is not configured");
+    return dynamic_cast<CodeLoader &>(*code_loader_);
+}
 
 }
