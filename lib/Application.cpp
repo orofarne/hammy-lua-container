@@ -39,7 +39,7 @@ Application::loadPlugin(std::string const &file, std::string const &section) {
 
     boost::property_tree::ptree cfg = config_.get_child(section);
 
-    std::shared_ptr<Plugin> p{ f(cfg) };
+    std::shared_ptr<Plugin> p{ f(io_service_, cfg) };
     if(!p)
         throw std::runtime_error("Plugin is null");
 

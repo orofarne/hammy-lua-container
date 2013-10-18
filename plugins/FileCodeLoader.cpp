@@ -120,7 +120,7 @@ class FileCodeLoader : public CodeLoader {
 
 }
 
-extern "C" hammy::Plugin *plugin_factory(boost::property_tree::ptree &config) {
+extern "C" hammy::Plugin *plugin_factory(boost::asio::io_service &io, boost::property_tree::ptree &config) {
     std::string path = config.get<std::string>("codepath");
 
     auto res = new hammy::FileCodeLoader;

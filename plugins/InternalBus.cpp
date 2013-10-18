@@ -25,7 +25,7 @@ class InternalBus : public Bus {
 
 }
 
-extern "C" hammy::Plugin *plugin_factory(boost::property_tree::ptree &config) {
+extern "C" hammy::Plugin *plugin_factory(boost::asio::io_service &io, boost::property_tree::ptree &config) {
     (void)config;
 
     return dynamic_cast<hammy::Plugin *>(new hammy::InternalBus{});

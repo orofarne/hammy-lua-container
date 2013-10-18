@@ -2,6 +2,7 @@ add_subdirectory(lua)
 
 add_library(hammy_lib STATIC
     Application.cpp
+    Error.cpp
     Value.cpp
     Manager.cpp
     Context.cpp
