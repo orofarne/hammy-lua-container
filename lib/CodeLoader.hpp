@@ -12,7 +12,7 @@ class CodeLoader : public Plugin {
         CodeLoader() {}
         virtual ~CodeLoader() throw() {}
 
-        virtual std::vector<std::string> loadTrigger(std::string const &host, std::string const &metric) = 0;
+        virtual void loadTrigger(std::string const &host, std::string const &metric, std::vector<std::string> *res, PluginCallback callback) = 0;
 };
 
 }

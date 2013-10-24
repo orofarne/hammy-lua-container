@@ -1,6 +1,7 @@
 #include "CodeLoader.hpp"
 #include "Context.hpp"
 
+#include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
@@ -11,6 +12,7 @@
 #include <map>
 #include <set>
 #include <tuple>
+#include <functional>
 
 #include <errno.h>
 #include <string.h>
@@ -32,14 +34,32 @@ namespace hammy {
 
 class FileCodeLoader : public CodeLoader {
     public:
-        FileCodeLoader() {}
+        FileCodeLoader(boost::asio::io_service &io)
+            : io_(io)
+        {}
 
         virtual ~FileCodeLoader() throw() {}
 
-        virtual std::vector<std::string> loadTrigger(std::string const &host, std::string const &metric) {
-            std::vector<std::string> res;
+        virtual void loadTrigger(std::string const &host, std::string const &metric, std::vector<std::string> *res, PluginCallback callback) {
+            res->clear();
 
-            return res;
+            auto it1 = deps_.find(host);
+            if(it1 != deps_.end()) {
+                auto it2 = it1->second.find(metric);
+                if(it2 != it1->second.end()) {
+                    for(auto it3 : it2->second) {
+                        auto it4 = code_.find(std::get<0>(it3));
+                        if(it4 != code_.end()) {
+                            auto it5 = it4->second.find(std::get<1>(it3));
+                            if(it5 != it4->second.end()) {
+                                res->push_back(it5->second);
+                            }
+                        }
+                    }
+                }
+            }
+
+            io_.dispatch(std::bind(callback, Error()));
         }
 
         void load(std::string const &path) {
@@ -68,6 +88,8 @@ class FileCodeLoader : public CodeLoader {
         }
 
     private:
+        boost::asio::io_service &io_;
+
         std::map<std::string, std::map<std::string, std::string>> code_;
         std::map<std::string, std::map<std::string, std::set<std::tuple<std::string, std::string>>>> deps_;
 
@@ -123,7 +145,7 @@ class FileCodeLoader : public CodeLoader {
 extern "C" hammy::Plugin *plugin_factory(boost::asio::io_service &io, boost::property_tree::ptree &config) {
     std::string path = config.get<std::string>("codepath");
 
-    auto res = new hammy::FileCodeLoader;
+    auto res = new hammy::FileCodeLoader{io};
     try {
         res->load(path);
     }

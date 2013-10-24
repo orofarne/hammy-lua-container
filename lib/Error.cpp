@@ -2,6 +2,10 @@
 
 namespace hammy {
 
+Error::Error()
+{
+}
+
 Error::Error(const char *message)
     : message_(message)
 {

@@ -46,18 +46,21 @@ Manager::requestCallback(std::shared_ptr<Request> req,
                          std::shared_ptr<Response> res)
 {
     // TODO: fix race condition here
-    app_.stateKeeper().set(req->host, req->metric, res->state);
+    //app_.stateKeeper().set(req->host, req->metric, res->state);
 
-    app_.bus().push(req->host, req->metric, res->value,
-            (res->timestamp == 0 ? ::time(nullptr) : res->timestamp));
+    //app_.bus().push(req->host, req->metric, res->value,
+    //        (res->timestamp == 0 ? ::time(nullptr) : res->timestamp));
 }
 
 void
 Manager::busCallback(std::string host, std::string metric,
         Value value, time_t timestamp)
 {
-    std::vector<std::string> code = app_.codeLoader().loadTrigger(host, metric);
-    // TODO
+    std::shared_ptr<std::vector<std::string>> code;
+
+    app_.codeLoader().loadTrigger(host, metric, code.get(), [=](Error e) {
+                //
+            });
 }
 
 }
