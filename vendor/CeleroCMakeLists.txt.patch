@@ -1,0 +1,15 @@
+--- CMakeLists.txt	2013-10-04 05:09:48.000000000 +0400
++++ CMakeLists.txt	2013-10-28 17:04:12.973925374 +0400
+@@ -72,6 +72,12 @@
+   set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE}" CACHE STRING "Compiler Flags for Release Builds" FORCE) 
+ endif() 
+ 
++if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
++  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall" CACHE STRING "Compiler Flags for All Builds" FORCE)
++  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pedantic" CACHE STRING "Compiler Flags for Debug Builds" FORCE) 
++  set(CMAKE_CXX_FLAGS_RELEASE  "${CMAKE_CXX_FLAGS_RELEASE}" CACHE STRING "Compiler Flags for Release Builds" FORCE)
++endif ()
++
+ #
+ # Build and Install Settings
+ #

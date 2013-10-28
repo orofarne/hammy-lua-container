@@ -1,15 +1,12 @@
 #pragma once
 
-#include "Value.hpp"
-
 #include <string>
 
 namespace hammy {
 
 struct Response {
-    std::string state; // binary
-    Value value; // binary
-    time_t timestamp;
+    uint64_t id;
+    std::string data; // binary
     std::string error; // text
 };
 

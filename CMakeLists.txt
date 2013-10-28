@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(hammy C CXX)
+project(hammy-lua-container C CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 OPTION(TESTS "enable_testing" ON)
-OPTION(PLUGINS "enable_std_plugins" ON)
+OPTION(BENCH "enable_benchmarks" ON)
 
 # Initialize FLAGS.
 set(CMAKE_CXX_FLAGS                "-Wall -std=c++11")
@@ -35,14 +35,14 @@ endif ()
 set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
-find_package( Boost 1.48.0 COMPONENTS system filesystem program_options thread REQUIRED )
+find_package( Boost 1.48.0 COMPONENTS system filesystem program_options REQUIRED )
 include_directories(${Boost_INCLUDE_DIRS})
 
 # Threads
 find_package(Threads REQUIRED)
 
-# Lua staff
-add_subdirectory(contrib)
+# "Vendor" staff
+add_subdirectory(vendor)
 include_directories(${LUAJIT_INCLUDE_DIRS})
 include_directories(${MSGPACKCLEN_INCLUDE_DIRS})
 
@@ -51,15 +51,7 @@ find_package(MsgPack REQUIRED)
 include_directories(${MsgPack_INCLUDE_DIRS})
 
 # Code
-add_subdirectory(lib)
-add_subdirectory(hammyd)
-
-# Std plugins
-if(PLUGINS)
-    find_package(LevelDB REQUIRED)
-    add_subdirectory(plugins)
-    add_subdirectory(example)
-endif(PLUGINS)
+add_subdirectory(src)
 
 # GTest magic
 if(TESTS)

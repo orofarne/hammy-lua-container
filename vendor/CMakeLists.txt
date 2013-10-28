@@ -62,3 +62,16 @@ if(TESTS)
   set(GTEST_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/include" PARENT_SCOPE)
   set(GTEST_BOTH_LIBRARIES "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/lib/.libs/libgtest.a" "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0/lib/.libs/libgtest.a" PARENT_SCOPE)
 endif(TESTS)
+
+if(BENCH)
+  ExternalProject_Add(celero
+    URL "https://github.com/DigitalInBlue/Celero/archive/master.zip"
+    URL_MD5 "37054014227aa73a90eeec6a38ff576b"
+    DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    PATCH_COMMAND sh -c "patch -p0 < '${CMAKE_CURRENT_SOURCE_DIR}/CeleroCMakeLists.txt.patch'"
+    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/Celero
+    CMAKE_ARGS "-DCELERO_RUN_EXAMPLE_ON_BUILD=NO"
+    BUILD_IN_SOURCE 1
+    INSTALL_COMMAND ""
+  )
+endif(BENCH)
