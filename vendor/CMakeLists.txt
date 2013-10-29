@@ -34,7 +34,7 @@ set(LUACMSGPACK_SRC "${CMAKE_CURRENT_BINARY_DIR}/lua-cmsgpack/lua_cmsgpack.c" PA
 ExternalProject_Add(msgpackclen
 #  GIT_REPOSITORY "https://github.com/orofarne/msgpack-c-len.git"
   URL "https://github.com/orofarne/msgpack-c-len/archive/master.zip"
-  URL_MD5 "48975a91ab892f3edfdd007083aa5fe2"
+  URL_MD5 "edec4bb1d43a92e9d55c20964ed0ea6e"
   DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/msgpack-c-len
   BUILD_IN_SOURCE 1
@@ -74,4 +74,7 @@ if(BENCH)
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND ""
   )
+
+  set(CELERO_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/Celero/include" PARENT_SCOPE)
+  set(CELERO_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/Celero/libcelero.so" PARENT_SCOPE)
 endif(BENCH)

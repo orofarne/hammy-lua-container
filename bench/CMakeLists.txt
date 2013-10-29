@@ -1,18 +1,18 @@
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
-file(GLOB HAMMY_TEST_SOURCES "*.cpp")
-add_executable(hammy_test ${HAMMY_TEST_SOURCES})
+file(GLOB HAMMY_BENCH_SOURCES "*.cpp")
+add_executable(hammy_bench ${HAMMY_BENCH_SOURCES})
 
-add_dependencies(hammy_test
+add_dependencies(hammy_bench
   hammy_lib
-  gtest
+  celero
 )
 
-target_link_libraries(hammy_test
+target_link_libraries(hammy_bench
   hammy_lua_container_lib
   luacmsgpack_lib
   hammy_lua_global
-  ${GTEST_BOTH_LIBRARIES}
+  ${CELERO_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
   ${LUAJIT_LIBRARY}
@@ -21,4 +21,5 @@ target_link_libraries(hammy_test
   "dl"
 )
 
-run_test(hammy_test)
+run_bench(hammy_bench)
+

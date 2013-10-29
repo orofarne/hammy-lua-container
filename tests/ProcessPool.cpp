@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
 
+#if 0
+
 #include "ProcessPool.hpp"
 
 #include <iostream>
 
 using namespace hammy;
-
-#if 0
 
 TEST(ProcessPool, Create) {
     boost::asio::io_service io_service;

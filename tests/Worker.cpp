@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#if 0
+
 #include "Worker.hpp"
 #include "Encode.hpp"
 
@@ -61,3 +63,5 @@ TEST(Worker, Test1) {
         state = resp->state;
     }
 }
+
+#endif

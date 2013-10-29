@@ -14,3 +14,4 @@ INSTALL
     cmake ..
     make
     make test
+    make bench

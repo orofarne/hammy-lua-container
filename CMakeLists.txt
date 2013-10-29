@@ -69,3 +69,19 @@ if(TESTS)
 
   add_subdirectory(tests)
 endif(TESTS)
+
+if(BENCH)
+  message(STATUS "GTest include dir: ${CELERO_INCLUDE_DIR}")
+  include_directories(${CELERO_INCLUDE_DIR})
+
+  add_custom_target(bench)
+  macro(run_bench bench_target)
+    add_custom_target(${bench_target}_runbench
+        COMMAND ${bench_target}
+        DEPENDS ${bench_target}
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+    add_dependencies(bench ${bench_target}_runbench)
+  endmacro()
+
+  add_subdirectory(bench)
+endif(BENCH)

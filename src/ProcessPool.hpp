@@ -2,8 +2,6 @@
 
 #include "Context.hpp"
 #include "SubProcess.hpp"
-#include "Request.hpp"
-#include "Response.hpp"
 
 #include <tuple>
 #include <queue>
@@ -16,13 +14,13 @@ namespace hammy {
 
 class ProcessPool {
     public:
-        typedef std::function<void(std::shared_ptr<Response>)> RequestCallback;
+        typedef std::function<void(int, std::shared_ptr<std::string>)> RequestCallback;
 
     public:
-        ProcessPool(boost::asio::io_service &io_service, Context &cx, unsigned int size, unsigned int max_count);
+        ProcessPool(boost::asio::io_service &io_service, Context &cx, unsigned int size, unsigned int max_count, RequestCallback callback);
         ~ProcessPool() throw();
 
-        void process(std::shared_ptr<Request> r, RequestCallback callback);
+        void process(int client_id, std::shared_ptr<std::string> r);
 
     private:
         struct Connection {
