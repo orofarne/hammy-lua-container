@@ -5,9 +5,10 @@ add_library(luacmsgpack_lib STATIC ${CMAKE_CURRENT_BINARY_DIR}/lua_cmsgpack.c)
 add_dependencies(luacmsgpack_lib luacmsgpack hammy_lua_global)
 
 add_library(hammy_lua_container_lib STATIC
-    Application.cpp
+    Server.cpp
+    Client.cpp
     Context.cpp
-    # ProcessPool.cpp
+    ProcessPool.cpp
     SubProcess.cpp
     Worker.cpp
     luatools.cpp
