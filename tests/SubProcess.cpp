@@ -9,22 +9,22 @@
 #include <algorithm>
 #include <iostream>
 
+#define DEBUG_MSG 0
+
 using namespace hammy;
 
-void *echo_f(void *in_buf, size_t in_size, size_t *out_size) {
-#if 0
-    std::cout << '[' << in_size << "]:   ";
+static Buffer echo_f(char *in_buf, size_t in_size) {
+#if DEBUG_MSG
+    std::cerr << '[' << in_size << " bytes]:   ";
     std::for_each(
             reinterpret_cast<char *>(in_buf),
             reinterpret_cast<char *>(in_buf) + in_size,
-            [](char ch) { std::cout << " " << ch; }
+            [](char ch) { std::cerr << " " << ch; }
         );
-    std::cout << std::endl;
+    std::cerr << std::endl;
 #endif
 
-    *out_size = in_size;
-    void *res = ::malloc(in_size);
-    return memcpy(res, in_buf, in_size);
+    return Buffer{ new std::string{in_buf, in_size} };
 }
 
 TEST(SubProcess, FreeRun) {
@@ -46,75 +46,73 @@ TEST(SubProcess, Fork) {
     }
 
     int status;
-    pid_t pid = wait(&status);
+    pid_t pid = ::wait(&status);
+
+    EXPECT_GT(pid, 0);
+}
+
+static void echoTest(int N) {
+    boost::asio::io_service io_service{};
+    std::shared_ptr<SubProcess> sp{ new SubProcess{io_service, echo_f} };
+
+    sp->fork();
+
+    int n = 0;
+
+    Buffer b{ new std::string{"\xa5Hello"} };
+
+    std::function<void(Buffer, Error)> cb = [&](Buffer rb, Error e) {
+#if DEBUG_MSG
+        std::cerr << "(#" << n << ") [" << rb->size() << " bytes]:   ";
+        for(const char ch : *rb) {
+            std::cerr << " " << ch;
+        }
+        std::cerr << std::endl;
+#endif
+
+        ++n;
+        ASSERT_EQ(b->size(), rb->size());
+
+        for(int i = 0; i < b->size(); ++i) {
+            EXPECT_EQ((*b)[i], (*rb)[i]);
+        }
+
+        if(n >= N) {
+            io_service.stop();
+#if DEBUG_MSG
+            std::cerr << "-- stop!" << std::endl;
+#endif
+        }
+        else {
+            io_service.post(std::bind(&SubProcess::process, sp.get(), b, cb));
+        }
+    };
+
+    sp->process(b, cb);
+
+    io_service.run();
+
+    sp.reset();
+
+    EXPECT_EQ(N, n);
+
+#if DEBUG_MSG
+    std::cerr << "-- waitpid" << std::endl;
+#endif
+    int status;
+    pid_t pid = ::wait(&status);
 
     EXPECT_GT(pid, 0);
 }
 
 TEST(SubProcess, Echo) {
-    {
-        boost::asio::io_service io_service{};
-        SubProcess sp{io_service, echo_f};
-
-        sp.fork();
-
-        errno = 0;
-
-        char b[] = "\xa5Hello";
-        EXPECT_EQ(6, write(sp.downFd(), b, 6));
-        ASSERT_EQ(0, errno);
-
-        struct timespec ts;
-        ts.tv_sec = 0;
-        ts.tv_nsec = 100 * 1000000;
-        ASSERT_EQ(0, nanosleep(&ts, nullptr));
-
-        char r[6];
-        EXPECT_EQ(6, read(sp.upFd(), r, 6));
-        ASSERT_EQ(0, errno);
-
-        EXPECT_EQ(b[0], r[0]); EXPECT_EQ(b[1], r[1]); EXPECT_EQ(b[2], r[2]);
-        EXPECT_EQ(b[3], r[3]); EXPECT_EQ(b[4], r[4]); EXPECT_EQ(b[5], r[5]);
-    }
-
-    int status;
-    pid_t pid = wait(&status);
-
-    EXPECT_GT(pid, 0);
+    echoTest(1);
 }
 
 TEST(SubProcess, Echo10) {
-    {
-        boost::asio::io_service io_service{};
-        SubProcess sp{io_service, echo_f};
+    echoTest(10);
+}
 
-        sp.fork();
-
-        errno = 0;
-
-        for(int i = 0; i < 10; ++i) {
-            char b[] = "\xa6Hello_";
-            b[6] = '0' + i;
-            EXPECT_EQ(7, write(sp.downFd(), b, 7));
-            ASSERT_EQ(0, errno);
-
-            struct timespec ts;
-            ts.tv_sec = 0;
-            ts.tv_nsec = 100 * 1000000;
-            ASSERT_EQ(0, nanosleep(&ts, nullptr));
-
-            char r[7];
-            EXPECT_EQ(7, read(sp.upFd(), r, 7));
-            ASSERT_EQ(0, errno);
-
-            EXPECT_EQ(b[0], r[0]); EXPECT_EQ(b[1], r[1]); EXPECT_EQ(b[2], r[2]);
-            EXPECT_EQ(b[3], r[3]); EXPECT_EQ(b[4], r[4]); EXPECT_EQ(b[5], r[5]);
-            EXPECT_EQ(b[6], r[6]);
-        }
-    }
-
-    int status;
-    pid_t pid = wait(&status);
-
-    EXPECT_GT(pid, 0);
+TEST(SubProcess, Echo1000) {
+    echoTest(1000);
 }

@@ -54,6 +54,7 @@ SubProcess::~SubProcess() throw() {
 
     if(pid_ > 0) {
         if(kill(pid_, SIGKILL) < 0 && errno != ESRCH) {
+            assert(0);
             // log it?...
         }
 
@@ -63,6 +64,8 @@ SubProcess::~SubProcess() throw() {
 
 void
 SubProcess::fork() {
+    namespace ph = std::placeholders;
+
     pid_t cpid = ::fork();
 
     if(cpid < 0)
@@ -79,7 +82,19 @@ SubProcess::fork() {
         up_d_.assign(pipefd_up_[1]);
         down_d_.assign(pipefd_down_[0]);
 
-        waitData();
+        reader_.reset(
+            new Reader<boost::asio::posix::stream_descriptor>(
+                io_service_, down_d_,
+                std::bind(&SubProcess::newDataChild, this, ph::_1)
+                )
+            );
+
+        writer_.reset(
+            new Writer<boost::asio::posix::stream_descriptor>(
+                io_service_, up_d_,
+                std::bind(&SubProcess::newDataChild, this, ph::_1)
+                )
+            );
     } else {
         // Parent process
         io_service_.notify_fork(boost::asio::io_service::fork_parent);
@@ -91,63 +106,67 @@ SubProcess::fork() {
 
         up_d_.assign(pipefd_up_[0]);
         down_d_.assign(pipefd_down_[1]);
+
+        reader_.reset(
+            new Reader<boost::asio::posix::stream_descriptor>(
+                io_service_, up_d_,
+                std::bind(&SubProcess::newDataParent, this, ph::_1)
+                )
+            );
+
+        writer_.reset(
+            new Writer<boost::asio::posix::stream_descriptor>(
+                io_service_, down_d_,
+                std::bind(&SubProcess::newDataParent, this, ph::_1)
+                )
+            );
     }
 }
 
 void
-SubProcess::waitData() {
-    size_t len = BLOCK_SIZE;
-    size_t offset = 0;
-    std::shared_ptr<char> p{
-        reinterpret_cast<char *>(::malloc(len)),
-        [](char *ptr) { if(ptr) ::free(ptr); }
-    };
-    if(p.get() == nullptr)
-        throw std::runtime_error("no memory");
+SubProcess::newDataChild(Error e) {
+    if(e) {
+        throw std::runtime_error(e->what());
+    }
 
-    for(;;) {
-        size_t n = down_d_.read_some(boost::asio::buffer(p.get() + offset, len - offset));
+    size_t len = 0;
+    char *ptr = reader_->get(&len);
 
-        char *error = nullptr;
-        size_t msg_len = ::msgpackclen_buf_read(p.get(), n, &error);
-        if(error) {
-            std::ostringstream msg;
-            msg << "Error [msgpackclen_buf_read]: " << error;
-            ::free(error);
-            throw std::runtime_error{msg.str()};
-        }
+    Buffer res = worker_f_(ptr, len);
 
-        offset += n;
+    reader_->pop();
 
-        if(msg_len == 0) {
-            if(n == len - offset) {
-                len += BLOCK_SIZE;
-                char *ptr = reinterpret_cast<char *>(::realloc(p.get(), len));
-                p.reset(ptr);
-                if(p.get() == nullptr)
-                    throw std::runtime_error("no memory");
-            }
+    writer_->write(res);
+}
+
+void
+SubProcess::newDataParent(Error e) {
+    if(callback_) {
+        if(e) {
+            io_service_.dispatch(std::bind(callback_, nullptr, e));
         }
         else {
-            size_t out_size = 0;
-            void *out_ptr = worker_f_(
-                    reinterpret_cast<void *>(p.get()), msg_len, &out_size
-                    );
-            std::shared_ptr<void> out_p{
-                out_ptr,
-                [](void *ptr) { if(ptr) ::free(ptr); }
-            };
+            size_t len;
+            char *ptr = reader_->get(&len);
+            Buffer b{ new std::string{ptr, len} };
+            reader_->pop();
 
-            // send answer
-            size_t m = 0;
-            while(m < out_size)
-                m += up_d_.write_some(boost::asio::buffer(out_ptr, out_size));
-
-            // move
-            ::memmove(p.get(), p.get() + msg_len, offset - msg_len);
-            offset = 0;
+            io_service_.post(std::bind(callback_, b, e));
+            callback_ = Callback{};
         }
     }
+    else {
+        if(!e)
+            e.reset(new std::runtime_error{"Unexpected data"});
+
+        error_ = e;
+    }
+}
+
+void
+SubProcess::process(Buffer b, Callback callback) {
+    callback_ = callback;
+    writer_->write(b);
 }
 
 }

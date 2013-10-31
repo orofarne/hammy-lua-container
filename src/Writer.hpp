@@ -1,5 +1,7 @@
 #pragma once
 
+#include "types.hpp"
+
 #include <boost/asio.hpp>
 
 #include <queue>
@@ -24,16 +26,7 @@ class Writer {
 
         ~Writer() throw() {}
 
-        void write(char *buf, size_t len);
-
-    private:
-        struct Buffer {
-            char *ptr;
-            size_t len;
-
-            Buffer() : ptr(nullptr), len(0) {}
-            ~Buffer() throw() { if(ptr != nullptr) ::free(ptr); }
-        };
+        void write(Buffer b);
 
     private:
         boost::asio::io_service &io_;
@@ -41,8 +34,8 @@ class Writer {
 
         Callback err_callback_;
 
-        std::queue<std::shared_ptr<Buffer>> write_queue_;
-        std::shared_ptr<Buffer> current_buffer_;
+        std::queue<Buffer> write_queue_;
+        Buffer current_buffer_;
         size_t current_offset_;
 
     private:
@@ -52,11 +45,7 @@ class Writer {
 
 template<typename T>
 void
-Writer<T>::write(char *buf, size_t len) {
-    std::shared_ptr<Buffer> b{new Buffer};
-    assert(b);
-    b->ptr = buf;
-    b->len = len;
+Writer<T>::write(Buffer b) {
     write_queue_.push(b);
 
     writeSome();
@@ -78,8 +67,8 @@ Writer<T>::writeSome() {
 
     sock_.async_write_some(
             boost::asio::buffer(
-                current_buffer_->ptr + current_offset_,
-                current_buffer_->len - current_offset_
+                current_buffer_->data() + current_offset_,
+                current_buffer_->size() - current_offset_
                 ),
             std::bind(
                 &Writer<T>::writeFunc,
@@ -101,7 +90,7 @@ Writer<T>::writeFunc(boost::system::error_code ec, size_t n) {
     }
 
     current_offset_ += n;
-    if(current_offset_ < current_buffer_->len) {
+    if(current_offset_ < current_buffer_->size()) {
         writeSome();
         return;
     }

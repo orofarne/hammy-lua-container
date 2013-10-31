@@ -2,7 +2,8 @@
 
 #include "Context.hpp"
 #include "SubProcess.hpp"
-#include "Error.hpp"
+
+#include "types.hpp"
 
 #include <tuple>
 #include <queue>
@@ -15,7 +16,6 @@ namespace hammy {
 
 class ProcessPool {
     public:
-        using Buffer = std::shared_ptr<std::string>;
         using Callback = std::function<void(Buffer, Error)>;
 
     public:

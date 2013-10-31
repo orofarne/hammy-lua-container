@@ -2,6 +2,8 @@
 
 #include "Context.hpp"
 
+#include "types.hpp"
+
 namespace hammy {
 
 class Worker {
@@ -9,7 +11,7 @@ class Worker {
         Worker(Context &c);
         ~Worker() throw();
 
-        void *operator()(void *in_buf, size_t in_size, size_t *out_size);
+        Buffer operator()(char *in_buf, size_t in_size);
 
     private:
         Context &c_;

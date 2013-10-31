@@ -3,11 +3,11 @@
 #include "Client.hpp"
 #include "ProcessPool.hpp"
 
+#include "types.hpp"
+
 #include <boost/asio.hpp>
 
-#include <string>
 #include <map>
-#include <memory>
 
 namespace hammy {
 
@@ -20,7 +20,7 @@ class Server {
 
     private:
         void acceptCb(boost::system::error_code ec);
-        void dataCb(Client *c, Client::Buffer b, Error e);
+        void dataCb(Client *c, Buffer b, Error e);
 
     private:
         // Boost.Asio staff

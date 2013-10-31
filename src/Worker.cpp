@@ -20,13 +20,13 @@ Worker::~Worker() throw() {
 
 }
 
-void *
-Worker::operator()(void *in_buf, size_t in_size, size_t *out_size) {
+Buffer
+Worker::operator()(char *in_buf, size_t in_size) {
     // Unpack request
     lua_getglobal(c_.L_, "cmsgpack");
     lua_getfield(c_.L_, -1, "unpack");
     lua_remove(c_.L_, -2); // cmsgpack
-    lua_pushlstring(c_.L_, reinterpret_cast<char *>(in_buf), in_size);
+    lua_pushlstring(c_.L_, in_buf, in_size);
     int rc = lua_pcall(c_.L_, 1, 1, 0);
     if(rc) {
         std::string msg = "lua_pcall [cmsgpack.unpack] error: ";
@@ -64,10 +64,11 @@ Worker::operator()(void *in_buf, size_t in_size, size_t *out_size) {
         lua_pop(c_.L_, 1); // errormessage
         throw std::runtime_error(msg);
     }
-    const char *resp = lua_tolstring(c_.L_, -1, out_size);
 
-    void *out_buf = ::malloc(*out_size);
-    ::memcpy(out_buf, resp, *out_size);
+    size_t out_size = 0;
+    const char *resp = lua_tolstring(c_.L_, -1, &out_size);
+
+    Buffer out_buf{ new std::string{resp, out_size}};
 
     return out_buf;
 }

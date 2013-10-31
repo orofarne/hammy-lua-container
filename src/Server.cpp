@@ -41,8 +41,15 @@ Server::acceptCb(boost::system::error_code ec) {
 }
 
 void
-Server::dataCb(Client *c, Client::Buffer b, Error e) {
-    pp_.process(b, [=](ProcessPool::Buffer rb, Error e) {
+Server::dataCb(Client *c, Buffer b, Error e) {
+    if(e) {
+        std::remove_if(clients_.begin(), clients_.end(),
+            [&](std::shared_ptr<Client> cl) { return cl.get() == c; }
+        );
+        return;
+    }
+
+    pp_.process(b, [=](Buffer rb, Error e) {
             if(e) {
                 std::remove_if(clients_.begin(), clients_.end(),
                     [&](std::shared_ptr<Client> cl) { return cl.get() == c; }
@@ -50,13 +57,7 @@ Server::dataCb(Client *c, Client::Buffer b, Error e) {
                 return;
             }
 
-            c->write(rb, [=](Error e) {
-                if(e) {
-                    std::remove_if(clients_.begin(), clients_.end(),
-                        [&](std::shared_ptr<Client> cl) { return cl.get() == c; }
-                    );
-                }
-            });
+            c->write(rb);
         });
 }
 

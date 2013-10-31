@@ -17,6 +17,14 @@ Client::Client(std::shared_ptr<boost::asio::local::stream_protocol::socket> s,
                 std::bind(&Client::newData, this, ph::_1)
                 )
             );
+
+    writer_.reset(
+            new Writer<boost::asio::local::stream_protocol::socket>(
+                socket_->get_io_service(), *socket_,
+                std::bind(&Client::newData, this, ph::_1)
+                )
+            );
+
 }
 
 
@@ -45,8 +53,8 @@ Client::newData(Error e) {
 
 
 void
-Client::write(Buffer b, ErrorCallback callback) {
-    // TODO
+Client::write(Buffer b) {
+    writer_->write(b);
 }
 
 }

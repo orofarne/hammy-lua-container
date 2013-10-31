@@ -1,18 +1,17 @@
 #pragma once
 
 #include "Reader.hpp"
+#include "Writer.hpp"
 
-#include <memory>
-#include <functional>
+#include "types.hpp"
+
 #include <boost/asio.hpp>
 
 namespace hammy {
 
 class Client {
     public:
-        using Buffer = std::shared_ptr<std::string>;
         using Callback = std::function<void(Client *, Buffer, Error)>;
-        using ErrorCallback = std::function<void(Error)>;
 
     public:
         Client(const Client&) = delete;
@@ -24,7 +23,7 @@ class Client {
 
         ~Client() throw();
 
-        void write(Buffer b, ErrorCallback callback);
+        void write(Buffer b);
 
     private:
         void newData(Error e);
@@ -32,6 +31,7 @@ class Client {
     private:
         std::shared_ptr<boost::asio::local::stream_protocol::socket> socket_;
         std::shared_ptr<Reader<boost::asio::local::stream_protocol::socket>> reader_;
+        std::shared_ptr<Writer<boost::asio::local::stream_protocol::socket>> writer_;
         Callback callback_;
 };
 

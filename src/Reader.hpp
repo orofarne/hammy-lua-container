@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Error.hpp"
+#include "types.hpp"
 
 #include "msglen.h"
 

@@ -85,8 +85,8 @@ TEST_F(TestReaderWriter, Hello_x10) {
 
     for(int i = 0; i < 10; ++i) {
         // 10100001 -> 0x91
-        char buf[] = {'\x91', std::to_string(i)[0]};
-        w.write(::strdup(buf), sizeof(buf));
+        Buffer b{ new std::string{{'\x91', std::to_string(i)[0]}} };
+        w.write(b);
     }
 
     io->run();

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Reader.hpp"
+#include "Writer.hpp"
+
 #include <stdexcept>
 #include <array>
 #include <functional>
@@ -16,18 +19,15 @@ class SubProcess {
                 explicit subprocess_error(const char *comment);
         };
 
-        typedef std::function<void *(void *, size_t, size_t *)> WorkerFunc;
+        using WorkerFunc = std::function<Buffer(char *buf, size_t len)>;
+        using Callback = std::function<void(Buffer buf, Error e)>;
 
     public:
         SubProcess(boost::asio::io_service &io_service, WorkerFunc f);
         ~SubProcess() throw();
 
         void fork();
-
-        inline int downFd() { return pipefd_down_[1]; }
-        inline boost::asio::posix::stream_descriptor &downD() { return down_d_; }
-        inline int upFd() { return pipefd_up_[0]; }
-        inline boost::asio::posix::stream_descriptor &upD() { return up_d_; }
+        void process(Buffer b, Callback callback);
 
     private:
         std::array<int, 2> pipefd_down_;
@@ -35,14 +35,20 @@ class SubProcess {
         int pid_;
 
         WorkerFunc worker_f_;
+        Callback callback_;
+        Error error_;
 
         // Boost::asio staff
         boost::asio::io_service &io_service_;
         boost::asio::posix::stream_descriptor up_d_;
         boost::asio::posix::stream_descriptor down_d_;
 
+        std::shared_ptr<Reader<boost::asio::posix::stream_descriptor>> reader_;
+        std::shared_ptr<Writer<boost::asio::posix::stream_descriptor>> writer_;
+
     private:
-        void waitData();
+        void newDataChild(Error e);
+        void newDataParent(Error e);
 };
 
 }
