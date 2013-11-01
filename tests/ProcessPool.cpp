@@ -1,59 +1,60 @@
 #include <gtest/gtest.h>
 
-#if 0
-
 #include "ProcessPool.hpp"
 
 #include <iostream>
 
+#include <boost/format.hpp>
+
+#define DEBUG_MSG 1
+
 using namespace hammy;
+
+static Buffer echo_f(char *in_buf, size_t in_size) {
+    return Buffer{ new std::string{in_buf, in_size} };
+}
 
 TEST(ProcessPool, Create) {
     boost::asio::io_service io_service;
-    Context c{};
-    ProcessPool pp{io_service, c, 1, 10};
+    ProcessPool pp{io_service, &echo_f, 2, 10};
+}
+
+TEST(ProcessPool, CheckBoostFormat) {
+    std::string s = str(boost::format("x = %1$02d") % 3);
+    ASSERT_EQ(6, s.length());
+    EXPECT_TRUE(s == "x = 03");
+
+    std::string s2 = str(boost::format("x = %1$02d") % 99);
+    ASSERT_EQ(6, s2.length());
+    EXPECT_TRUE(s2 == "x = 99");
 }
 
 TEST(ProcessPool, Test1) {
     boost::asio::io_service io_service;
+    ProcessPool pp{io_service, &echo_f, 2, 10};
 
-    Context c{};
-    std::string code = "return {\n"
-    "   onData = function(this, value, timestamp)\n"
-    "       this.x = (this.x or 0) + value + 2\n"
-    "       return this.x\n"
-    "   end\n"
-    "}\n";
-    c.loadModule("mymodule", code.c_str(), code.length());
+    int n = 0;
+    int N = 100;
 
-    ProcessPool pp{io_service, c, 1, 10};
+    for(int i = 0; i < N; ++i) {
+        std::string s = str(boost::format("\xa5i=%1$03d") % i);
+        ASSERT_EQ(6, s.length());
+        Buffer b{new std::string(s)};
 
-    std::string state;
-    int k = 0;
+        pp.process(b, [&n, i, N, &io_service](Buffer b, Error e) {
+            ASSERT_FALSE(e);
 
-    for(int i = 0; i < 30; ++i) {
-        std::shared_ptr<Request> req{new Request};
-        req->host = "myhost";
-        req->func = "onData";
-        req->metric = "mymodule";
-        req->state = state;
-        req->value = Value(Value::Type::Numeric, 5);
-        req->timestamp = 1380132909 + 2 * i;
-
-        pp.process(req, [&, i](std::shared_ptr<Response> resp) {
-            ASSERT_TRUE((bool)resp);
-
-            EXPECT_TRUE(resp->error.empty());
-            if(!resp->error.empty()) {
-                FAIL() << "An error returned: " << resp->error;
+            std::string rs = str(boost::format("\xa5i=%1$03d") % i);
+            ASSERT_EQ(rs.length(), b->length());
+            for(int j = 0; j < rs.length(); ++j) {
+                EXPECT_EQ(rs[j], (*b)[j]);
             }
-            EXPECT_EQ(0, resp->timestamp);
-            ASSERT_EQ(Value::Type::Numeric, resp->value.type());
-            EXPECT_DOUBLE_EQ(7, resp->value.as<double>());
-            ASSERT_GT(resp->state.size(), 0);
-            state = resp->state;
 
-            if(++k >= 30) {
+            ++n;
+#if DEBUG_MSG
+            std::cerr << "-- [" << n << "]: " << *b << std::endl;
+#endif
+            if(n >= N) {
                 io_service.stop();
             }
         });
@@ -61,8 +62,5 @@ TEST(ProcessPool, Test1) {
 
     io_service.run();
 
-    EXPECT_FALSE(state.empty());
-    ASSERT_EQ(30, k);
+    EXPECT_EQ(N, n);
 }
-
-#endif

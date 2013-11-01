@@ -28,6 +28,8 @@ class SubProcess {
 
         void fork();
         void process(Buffer b, Callback callback);
+        inline bool isFree() { return !callback_; }
+        inline Error error() { return error_; }
 
     private:
         std::array<int, 2> pipefd_down_;
