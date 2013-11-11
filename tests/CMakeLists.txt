@@ -6,6 +6,7 @@ include_directories(${CUNIT_INCLUDE_DIR})
 set(TEST_SOURCES
 	main.c
 	reader.c
+	writer.c
 	router.c
 )
 

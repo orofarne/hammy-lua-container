@@ -105,6 +105,7 @@ hammy_reader_new (struct hammy_reader_cfg *cfg, GError **error)
 
 	g_assert (cfg);
 	g_assert (cfg->loop);
+	g_assert (cfg->callback);
 
 	self = g_new0 (struct hammy_reader_priv, 1);
 
