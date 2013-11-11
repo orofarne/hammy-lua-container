@@ -1,4 +1,5 @@
 add_library(hammy_lua_container_lib STATIC
+	reader.c
 	child.c
 	router.c
 	worker.c

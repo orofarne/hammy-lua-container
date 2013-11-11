@@ -36,7 +36,7 @@ h_router_thread_func (gpointer data)
 }
 
 void testRouterTest1()
-{
+{ /*
 	GError *error = NULL;
 	struct hammy_router_cfg cfg;
 	GThread *th = NULL;
@@ -98,7 +98,7 @@ void testRouterTest1()
 
 	g_free (cfg.sock_path);
 	hammy_router_free (r);
-}
+*/ }
 
 int addRouterSuite()
 {
@@ -112,7 +112,7 @@ int addRouterSuite()
 
 	/* add the tests to the suite */
 	if (
-		(NULL == CU_add_test(pSuite, "Test1", testRouterTest1)) ||
+		//(NULL == CU_add_test(pSuite, "Test1", testRouterTest1)) ||
 		0)
 	{
 		return CU_get_error();

@@ -11,6 +11,7 @@ int setUpTests()
 {
 	int rc;
 
+	HAMMY_ADD_SUITE( addReaderSuite );
 	HAMMY_ADD_SUITE( addRouterSuite );
 
 	return 0;
