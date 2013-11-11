@@ -57,26 +57,35 @@ static void testReaderHelloCallback(GByteArray *data, GError *error)
 	CU_ASSERT_PTR_NOT_NULL_FATAL (data);
 
 	bytes += data->len;
-	CU_ASSERT_EQUAL (data->len, 6);
-	CU_ASSERT_NSTRING_EQUAL (data->data, "\xa5Hello", data->len);
+	if (data->len == 6)
+	{
+		CU_ASSERT_NSTRING_EQUAL (data->data, "\xa5Hello", data->len);
+	}
 
-	ev_break (loop, EVBREAK_ALL);
+	if (data->len == 4)
+	{
+		CU_ASSERT_NSTRING_EQUAL (data->data, "\xa3Hi!", data->len);
+	}
+
+	if (bytes >= 10)
+	{
+		ev_break (loop, EVBREAK_ALL);
+	}
 }
 
 static void testReaderHello()
 {
 	GError *error = NULL;
 	GThread *th = NULL;
-	char buf1[] = {'\xa5', 'H', 'e', 'l', 'l', 'o'};
+	char buf1[] = {'\xa5', 'H', 'e', 'l', 'l', 'o', '\xa3', 'H', 'i', '!'};
 	GByteArray buf;
 	struct hammy_reader_cfg cfg;
 	hammy_reader_t r;
 	ssize_t *n;
 
 	buf.data = (gpointer)buf1;
-	buf.len = 6;
+	buf.len = 10;
 	th = g_thread_new ("reader_test_thread", h_reader_test_thread_func, &buf);
-	g_usleep (10000); // FIXME
 
 	cfg.fd = pipefd[0];
 	cfg.loop = loop;

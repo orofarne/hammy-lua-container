@@ -60,34 +60,39 @@ hammy_reader_readable_cb (struct ev_loop *loop, ev_io *w, int revents)
 	{
 		self->buffer_size += n;
 
-		m = msgpackclen_buf_read (self->buffer, self->buffer_size, &msgpackclen_err);
-		if (msgpackclen_err != NULL)
-		{
-			// Fatal error
-			g_error ("hammy_msg_buf_read: %s", msgpackclen_err);
-		}
-		if (m > 0)
-		{
-			data = g_byte_array_new ();
-			data->data = g_memdup (self->buffer, m);
-			data->len = m;
-
-			if (m != self->buffer_size)
+		for(;;) {
+			m = msgpackclen_buf_read (self->buffer, self->buffer_size, &msgpackclen_err);
+			if (msgpackclen_err != NULL)
 			{
-				memmove (self->buffer, (char *)self->buffer + m, self->buffer_size - m);
+				// Fatal error
+				g_error ("hammy_msg_buf_read: %s", msgpackclen_err);
 			}
-			self->buffer_size -= m;
-		}
-		else
-		{
-			if (n == self->buffer_capacity)
+			if (m > 0)
 			{
-				self->buffer_capacity *= 2;
-				self->buffer = g_realloc (self->buffer, self->buffer_capacity);
+				data = g_byte_array_new ();
+				data->data = g_memdup (self->buffer, m);
+				data->len = m;
+
+				if (m != self->buffer_size)
+				{
+					memmove (self->buffer, (char *)self->buffer + m, self->buffer_size - m);
+				}
+				self->buffer_size -= m;
+			}
+			else
+			{
+				if (n == self->buffer_capacity)
+				{
+					self->buffer_capacity *= 2;
+					self->buffer = g_realloc (self->buffer, self->buffer_capacity);
+				}
+
+				return; // prevent callback call
 			}
 
-			return; // prevent callback call
+			(*self->callback)(data, err);
 		}
+		return;
 	}
 
 	(*self->callback)(data, err);
