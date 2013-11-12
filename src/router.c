@@ -1,6 +1,8 @@
 #include "router.h"
 
 #include "worker.h"
+#include "reader.h"
+#include "writer.h"
 #include "glib_defines.h"
 
 #include <msglen.h>
@@ -21,16 +23,12 @@
 G_DEFINE_QUARK (hammy-router-error, hammy_router_error)
 #define E_DOMAIN hammy_router_error_quark()
 
-#define HAMMY_ROUTER_DEF_DATA_SIZE 1024
-
 struct hammy_router_client
 {
-	ev_io io;
 	int fd;
 
-	gpointer buffer;
-	gsize buffer_size;
-	gsize buffer_capacity;
+	hammy_reader_t reader;
+	hammy_writer_t writer;
 
 	struct hammy_router_priv* server;
 };
@@ -69,20 +67,96 @@ struct hammy_router_priv
 	GError *error;
 };
 
+static gboolean
+hammy_router_touch_workers (hammy_router_t self, _H_AERR);
+
+static void
+hammy_router_client_reader_cb (gpointer priv, GByteArray *data, GError *error)
+{
+	GError *err = NULL;
+	struct hammy_router_task *task;
+	struct hammy_router_client *client = (struct hammy_router_client *)priv;
+
+	if (error)
+	{
+		// FIXME
+		g_error ("%s [%d]: %s", __FUNCTION__, __LINE__, error->message);
+	}
+
+	task = g_new0 (struct hammy_router_task, 1);
+	task->client = client;
+	task->data = data->data;
+	task->data_size = data->len;
+
+	g_byte_array_free (data, FALSE);
+
+	g_queue_push_tail (client->server->tasks, task);
+
+	if (!hammy_router_touch_workers (client->server, &err))
+	{
+		// FIXME
+		g_error ("%s [%d]: %s", __FUNCTION__, __LINE__, (err ? err->message : "<NULL>"));
+	}
+}
+
+static void
+hammy_router_client_writer_cb (gpointer priv, GError *error)
+{
+
+}
+
 static void
 hammy_router_client_free (gpointer ptr)
 {
-	struct hammy_router_client *client = (struct hammy_router_client *)ptr;
+	struct hammy_router_client *self = (struct hammy_router_client *)ptr;
 
-	if (client == NULL)
+	if (self == NULL)
 		return;
 
-	if (client->buffer != NULL)
-		g_free (client->buffer);
-	// FIXME
-	ev_io_stop(client->server->loop, &client->io);
-	close (client->fd);
-	g_free (client);
+	if (self->reader)
+		hammy_reader_free (self->reader);
+	if (self->writer)
+		hammy_writer_free (self->writer);
+
+	close (self->fd);
+	g_free (self);
+}
+
+
+static struct hammy_router_client *
+hammy_router_client_new (hammy_router_t server, int fd, GError **error)
+{
+	GError *lerr = NULL;
+	struct hammy_reader_cfg r_cfg;
+	struct hammy_writer_cfg w_cfg;
+	struct hammy_router_client *self = g_new0 (struct hammy_router_client, 1);
+
+	self->server = server;
+	self->fd = fd;
+
+	r_cfg.fd = self->fd;
+	r_cfg.loop = self->server->loop;
+	r_cfg.callback = &hammy_router_client_reader_cb;
+	self->reader = hammy_reader_new (&r_cfg, &lerr);
+	if (!self->reader)
+	{
+		hammy_router_client_free (self);
+		g_propagate_error (error, lerr);
+		return NULL;
+	}
+
+	w_cfg.fd = self->fd;
+	w_cfg.loop = self->server->loop;
+	w_cfg.callback = &hammy_router_client_writer_cb;
+	self->writer = hammy_writer_new (&w_cfg, &lerr);
+	if (!self->writer)
+	{
+		hammy_router_client_free (self);
+		g_propagate_error (error, lerr);
+		return NULL;
+	}
+
+	return self;
 }
 
 static void
@@ -117,19 +191,17 @@ hammy_router_worker_cb (gpointer private, gpointer data, gsize data_size, GError
 {
 	FUNC_BEGIN()
 
-	ssize_t rc;
+	GByteArray *buf = g_byte_array_new ();
 
 	struct hammy_router_task *task = (struct hammy_router_task *)private;
+	struct hammy_router_client *client = task->client;
 
-	g_free (task->data);
+	hammy_router_task_free (task);
 
-	task->data = data;
-	task->data_size = data_size;
+	buf->data = data;
+	buf->len = data_size;
 
-	//FIXME:
-	rc = write (task->client->fd, task->data, task->data_size);
-	if (rc < 0)
-		ERRNO_ERR ("write");
+	H_TRY (hammy_writer_write (client->writer, buf, ERR_RETURN));
 
 	FUNC_END()
 }
@@ -202,116 +274,43 @@ hammy_router_touch_workers (hammy_router_t self, _H_AERR)
 	FUNC_END()
 }
 
-// This callback is called when client data is readable on the unix socket.
-static void
-hammy_router_client_cb (struct ev_loop *loop, ev_io *w, int revents)
-{
-	struct hammy_router_client *client = (struct hammy_router_client *)w->data;
-	int n;
-	size_t m;
-	struct hammy_router_task *task;
-	GError *err = NULL;
-
-	n = recv(client->fd, client->buffer, client->buffer_capacity, MSG_DONTWAIT);
-	if (n < 0)
-	{
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			g_warning ("(errno == EAGAIN || errno == EWOULDBLOCK)"); // DEBUG
-			return; // Wait for data
-		}
-		else
-		{
-			// TODO: handle error
-			g_error ("hammy_router_client_cb recv: n = %d, err: [%d] %s", n, errno, strerror(errno));
-		}
-	}
-	if (n == 0)
-	{
-		// an orderly disconnect
-		client->server->clients = g_slist_remove (client->server->clients, client);
-		hammy_router_client_free (client);
-		return;
-	}
-	client->buffer_size += n;
-
-	char *msgpackclen_err = NULL;
-	m = msgpackclen_buf_read (client->buffer, client->buffer_size, &msgpackclen_err);
-	if (msgpackclen_err != NULL)
-	{
-		// TODO
-		g_error ("hammy_msg_buf_read: %s", err->message);
-		// free(msgpackclen_err);
-	}
-	if (m > 0)
-	{
-		task = g_new0 (struct hammy_router_task, 1);
-		task->client = client;
-		task->data = g_memdup (client->buffer, m);
-		task->data_size = m;
-		g_queue_push_tail (client->server->tasks, task);
-		if (m != client->buffer_size)
-		{
-			memmove (client->buffer, (char *)client->buffer + m, client->buffer_size - m);
-		}
-		client->buffer_size -= m;
-
-		if (!hammy_router_touch_workers (client->server, &err))
-		{
-			// TODO
-		}
-	}
-	else
-	{
-		if (n == client->buffer_capacity)
-		{
-			client->buffer_capacity *= 2;
-			client->buffer = g_realloc (client->buffer, client->buffer_capacity);
-			return; // ?...
-		}
-	}
-}
-
 // This callback is called when data is readable on the unix socket.
 static void
 hammy_router_accept_cb (struct ev_loop *loop, ev_io *w, int revents)
 {
 	hammy_router_t self = (hammy_router_t)w->data;
-	struct hammy_router_client *client;
-	GError *err = NULL;
+	struct hammy_router_client *client = NULL;
+	GError *lerr = NULL;
+	int fd;
 
 	g_assert (revents & EV_READ);
 
-	// New client
-
-	client = g_new0 (struct hammy_router_client, 1);
-
-	client->fd = accept (self->in_fd, NULL, NULL);
-	if (client->fd < 0)
+	fd = accept (self->in_fd, NULL, NULL);
+	if (fd < 0)
 	{
 		E_SET_ERRNO (&self->error, "accept");
 		ev_loop_destroy (EV_DEFAULT_UC); // ???
-		g_free (client);
 		return; // break;
 	}
 
-	hammy_router_setnonblock (client->fd, &err);
-	if (err != NULL)
+	hammy_router_setnonblock (fd, &lerr);
+	if (lerr != NULL)
 	{
-		g_propagate_error (&self->error, err);
+		close (fd);
+		g_propagate_error (&self->error, lerr);
 		ev_loop_destroy (EV_DEFAULT_UC); // ???
-		g_free (client);
 		return; // break;
 	}
 
-	client->buffer_capacity = HAMMY_ROUTER_DEF_DATA_SIZE;
-	client->buffer = g_malloc0 (client->buffer_capacity);
-	client->server = self;
-	client->io.data = client;
-	ev_io_init (&client->io, hammy_router_client_cb, client->fd, EV_READ);
-	ev_io_start (self->loop, &client->io);
+	client = hammy_router_client_new (self, fd, ERR_RETURN);
+	if (!client)
+	{
+		close (fd);
+		g_propagate_error (&self->error, lerr);
+		return;
+	}
 
 	self->clients = g_slist_prepend (self->clients, client);
-	client = NULL;
 }
 
 static gboolean

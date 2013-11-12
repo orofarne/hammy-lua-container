@@ -51,7 +51,7 @@ h_reader_test_thread_func (gpointer data)
 	return n;
 }
 
-static void testReaderHelloCallback(GByteArray *data, GError *error)
+static void testReaderHelloCallback(gpointer priv, GByteArray *data, GError *error)
 {
 	CU_ASSERT_PTR_NULL (error);
 	CU_ASSERT_PTR_NOT_NULL_FATAL (data);

@@ -23,7 +23,8 @@ struct hammy_writer_priv
 	goffset current_offset;
 	GQueue *buffers;
 
-	void (*callback)(GError *error);
+	gpointer priv;
+	void (*callback)(gpointer priv, GError *error);
 };
 
 static void
@@ -32,6 +33,8 @@ hammy_writer_writable_cb (struct ev_loop *loop, ev_io *w, int revents)
 	hammy_writer_t self = (hammy_writer_t)w->data;
 	ssize_t n;
 	GError *err = NULL;
+
+	g_assert (revents & EV_WRITE);
 
 	if (!self->current_buffer)
 	{
@@ -55,7 +58,7 @@ hammy_writer_writable_cb (struct ev_loop *loop, ev_io *w, int revents)
 		else
 		{
 			E_SET_ERRNO (&err, "write");
-			(*self->callback) (err);
+			(*self->callback) (self->priv, err);
 			return;
 		}
 	}
@@ -86,6 +89,7 @@ hammy_writer_new (struct hammy_writer_cfg *cfg, GError **error)
 	self->io.data = self;
 	self->fd = cfg->fd;
 	self->loop = cfg->loop;
+	self->priv = cfg->priv;
 	self->callback = cfg->callback;
 
 	self->buffers = g_queue_new ();

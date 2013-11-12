@@ -13,7 +13,8 @@ struct hammy_writer_cfg
 	int fd;
 	struct ev_loop *loop;
 
-	void (*callback)(GError *error);
+	gpointer priv;
+	void (*callback)(gpointer priv, GError *error);
 };
 
 struct hammy_writer_priv;

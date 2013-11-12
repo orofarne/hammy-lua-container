@@ -26,7 +26,8 @@ struct hammy_reader_priv
 	gsize buffer_size;
 	gsize buffer_capacity;
 
-	void (*callback)(GByteArray *data, GError *error);
+	gpointer priv;
+	void (*callback)(gpointer priv, GByteArray *data, GError *error);
 };
 
 // This callback is called when client data is readable on the socket.
@@ -39,6 +40,8 @@ hammy_reader_readable_cb (struct ev_loop *loop, ev_io *w, int revents)
 	size_t m;
 	GByteArray *data = NULL;
 	GError *err = NULL;
+
+	g_assert (revents & EV_READ);
 
 	n = read (self->fd, self->buffer, self->buffer_capacity);
 	if (n < 0)
@@ -90,12 +93,12 @@ hammy_reader_readable_cb (struct ev_loop *loop, ev_io *w, int revents)
 				return; // prevent callback call
 			}
 
-			(*self->callback)(data, err);
+			(*self->callback)(self->priv, data, err);
 		}
 		return;
 	}
 
-	(*self->callback)(data, err);
+	(*self->callback)(self->priv, data, err);
 }
 
 hammy_reader_t
@@ -112,6 +115,7 @@ hammy_reader_new (struct hammy_reader_cfg *cfg, GError **error)
 	self->io.data = self;
 	self->fd = cfg->fd;
 	self->loop = cfg->loop;
+	self->priv = cfg->priv;
 	self->callback = cfg->callback;
 
 	// Initialize buffer

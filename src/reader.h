@@ -13,7 +13,8 @@ struct hammy_reader_cfg
 	int fd;
 	struct ev_loop *loop;
 
-	void (*callback)(GByteArray *data, GError *error);
+	gpointer priv;
+	void (*callback)(gpointer priv, GByteArray *data, GError *error);
 };
 
 struct hammy_reader_priv;

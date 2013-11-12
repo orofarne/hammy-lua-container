@@ -44,12 +44,12 @@ static int cleanWriterSuite()
 }
 
 
-static void testWriterHelloCallback(GError *error)
+static void testWriterHelloCallback(gpointer priv, GError *error)
 {
 	g_assert (error);
 }
 
-static void testWriterHelloReaderCallback(GByteArray *data, GError *error)
+static void testWriterHelloReaderCallback(gpointer priv, GByteArray *data, GError *error)
 {
 	GString *msg = g_string_new (NULL);
 	g_string_append_printf (msg, "\xa8Hello%3d", res_i);
