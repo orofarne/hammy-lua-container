@@ -1,4 +1,5 @@
 #include "router.h"
+#include "eval.h"
 
 #include <glib.h>
 #include "glib_defines.h"
@@ -31,6 +32,11 @@ start_router (GKeyFile *cfg_kv, _H_AERR)
 	H_ASSERT_ERROR
 	cfg.max_workers = g_key_file_get_uint64 (cfg_kv, "worker", "max_workers", ERR_RETURN);
 	H_ASSERT_ERROR
+
+	struct hammy_eval eval_cfg;
+	eval_cfg.priv = NULL; // FIXME
+	eval_cfg.eval = NULL; // FIXME
+	cfg.eval = &eval_cfg;
 
 	router = hammy_router_new (&cfg, ERR_RETURN);
 	if (router == NULL)

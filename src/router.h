@@ -1,5 +1,7 @@
 #pragma once
 
+#include "eval.h"
+
 #include <glib.h>
 
 #ifdef __cplusplus
@@ -11,6 +13,8 @@ struct hammy_router_cfg
 	gchar* sock_path;
 	gint sock_backlog;
 	guint max_workers;
+
+	struct hammy_eval *eval;
 };
 
 struct hammy_router_priv;

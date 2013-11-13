@@ -1,5 +1,7 @@
 #pragma once
 
+#include "eval.h"
+
 #include <glib.h>
 // Libev
 #include <ev.h>
@@ -13,6 +15,8 @@ struct hammy_child_cfg
 	struct ev_loop *loop;
 	int in_socket;
 	int out_socket;
+
+	struct hammy_eval *eval;
 };
 
 struct hammy_child_priv;

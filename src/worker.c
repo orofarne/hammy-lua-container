@@ -1,5 +1,7 @@
 #include "worker.h"
 
+#include "reader.h"
+#include "writer.h"
 #include "child.h"
 
 #include "glib_defines.h"
@@ -15,8 +17,6 @@
 G_DEFINE_QUARK (hammy-worker-error, hammy_worker_error)
 #define E_DOMAIN hammy_worker_error_quark()
 
-#define HAMMY_WORKER_DEF_BUFF_SIZE 1024
-
 struct hammy_worker_priv
 {
 	gboolean busy;
@@ -24,15 +24,14 @@ struct hammy_worker_priv
 	int to_pfd[2];
 	int from_pfd[2];
 	struct ev_loop *loop;
-	ev_io to_io;
-	ev_io from_io;
-	gpointer input_data;
-	gsize input_data_size;
-	gpointer output_data;
-	gsize output_data_size;
-	gsize output_data_capacity;
+
+	hammy_reader_t reader;
+	hammy_writer_t writer;
+
 	hammy_worker_task_cb callback;
 	gpointer callback_private;
+
+	struct hammy_eval *eval;
 };
 
 static gboolean
@@ -44,6 +43,7 @@ hammy_worker_child (hammy_worker_t self, _H_AERR)
 	struct hammy_child_cfg child_cfg;
 
 	child_cfg.loop = self->loop;
+	child_cfg.eval = self->eval;
 	child_cfg.in_socket = self->to_pfd[0];
 	child_cfg.out_socket = self->from_pfd[1];
 
@@ -55,112 +55,6 @@ hammy_worker_child (hammy_worker_t self, _H_AERR)
 		H_ASSERT_ERROR
 
 	FUNC_END(hammy_child_free(ch))
-}
-
-static gboolean
-hammy_worker_task_done (hammy_worker_t self, _H_AERR)
-{
-	FUNC_BEGIN()
-
-	gpointer buf =  g_memdup (self->output_data, self->output_data_size);
-	gsize size = self->output_data_size;
-
-	(*self->callback)(self->callback_private, buf, size, ERR_RETURN);
-
-	self->output_data_size = 0;
-	self->callback = NULL;
-	self->callback_private = NULL;
-	self->busy = FALSE;
-
-	FUNC_END()
-}
-
-static void
-hammy_worker_from_cb (struct ev_loop *loop, ev_io *w, int revents)
-{
-	ssize_t rc;
-	size_t m_rc;
-	GError *err = NULL;
-	hammy_worker_t self = (hammy_worker_t)w->data;
-
-	if (self->output_data_size == self->output_data_capacity) {
-		self->output_data_capacity = self->output_data_capacity * 2 + HAMMY_WORKER_DEF_BUFF_SIZE;
-		self->output_data = g_realloc (self->output_data, self->output_data_capacity);
-	}
-
-	rc = read (self->from_pfd[0], self->output_data + self->output_data_size, self->output_data_capacity);
-	if (rc < 0)
-		g_error ("read: %s", g_strerror (errno));
-
-	if (rc == 0) {
-		g_warning ("EOF");
-		goto END;
-	}
-
-	self->output_data_size += rc;
-
-	char *msgpackclen_err = NULL;
-	m_rc = msgpackclen_buf_read (self->output_data, self->output_data_size, &msgpackclen_err);
-	if (m_rc == 0) {
-		if (msgpackclen_err != NULL)
-		{
-			g_error ("msgpackclen_buf_read: %s", msgpackclen_err); // FIXME
-			// free (msgpackclen_err);
-		}
-
-		return; // Wait for more data
-	}
-
-	if (m_rc != self->output_data_size) {
-		g_warning ("Garbage in channel");
-		self->output_data_size = m_rc;
-	}
-
-	// Process answer
-	if (!hammy_worker_task_done (self, &err))
-		g_error ("hammy_worker_task_done: %s", err->message);
-
-END:
-	// All data read
-	// Stop libev for write events
-	ev_io_stop(self->loop, &self->from_io);
-}
-
-static void
-hammy_worker_to_cb (struct ev_loop *loop, ev_io *w, int revents)
-{
-	ssize_t rc;
-	hammy_worker_t self = (hammy_worker_t)w->data;
-
-	g_assert (self->input_data_size > 0);
-
-	// TODO
-	// Try to write data immediately
-	rc = write (self->to_pfd[1], self->input_data, self->input_data_size);
-	if (rc < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-		// We can't write data immediately
-		return;
-	}
-
-	if (rc < 0) {
-		// Error
-		// TODO
-		g_error ("hammy_worker_to_cb");
-	}
-
-	if (rc < self->input_data_size) {
-		self->input_data = self->input_data + rc;
-		self->input_data_size = self->input_data_size - rc;
-		return;
-	}
-
-	// All data wrote
-	// Stop libev for write events
-	ev_io_stop(self->loop, &self->to_io);
-	// Set up libev for new child read events
-	self->from_io.data = self;
-	ev_io_init (&self->from_io, hammy_worker_from_cb, self->from_pfd[0], EV_READ);
-	ev_io_start (self->loop, &self->from_io);
 }
 
 static gboolean
@@ -195,6 +89,42 @@ hammy_worker_fork (hammy_worker_t self, _H_AERR)
 	FUNC_END()
 }
 
+// Propagate answer or error from worker
+static void
+hammy_worker_reader_cb (gpointer priv, GByteArray *data, GError *error)
+{
+	hammy_worker_t self = (hammy_worker_t)priv;
+
+	if (error)
+	{
+		if (data)
+		{
+			g_byte_array_free (data, TRUE);
+		}
+		(*self->callback)(self->callback_private, NULL, 0, error);
+	}
+	else
+	{
+		(*self->callback)(self->callback_private, data->data, data->len, NULL);
+		g_byte_array_free (data, FALSE);
+	}
+
+	self->callback = NULL;
+	self->callback_private = NULL;
+	self->busy = FALSE;
+}
+
+// Propagate error from worker
+static void
+hammy_worker_writer_cb (gpointer priv, GError *error)
+{
+	hammy_worker_t self = (hammy_worker_t)priv;
+
+	g_assert (self->callback);
+
+	(*self->callback)(self->callback_private, NULL, 0, error);
+}
+
 hammy_worker_t
 hammy_worker_new (struct hammy_worker_cfg *cfg, GError **error)
 {
@@ -202,10 +132,12 @@ hammy_worker_new (struct hammy_worker_cfg *cfg, GError **error)
 
 	struct hammy_worker_priv *self = g_new0 (struct hammy_worker_priv, 1);
 
-	g_assert (cfg != NULL);
-	g_assert (cfg->loop != NULL);
+	g_assert (cfg);
+	g_assert (cfg->loop);
+	g_assert (cfg->eval);
 
 	self->loop = cfg->loop;
+	self->eval = cfg->eval;
 
 	if (pipe (self->to_pfd) < 0)
 		ERRNO_ERR ("pipe (to)");
@@ -224,6 +156,21 @@ hammy_worker_new (struct hammy_worker_cfg *cfg, GError **error)
 
 	if (!hammy_worker_fork (self, ERR_RETURN))
 		H_ASSERT_ERROR
+
+	struct hammy_reader_cfg r_cfg;
+	r_cfg.fd = self->from_pfd[0];
+	r_cfg.loop = self->loop;
+	r_cfg.priv = self;
+	r_cfg.callback = &hammy_worker_reader_cb;
+	H_TRY (self->reader = hammy_reader_new (&r_cfg, ERR_RETURN));
+
+	struct hammy_writer_cfg w_cfg;
+	w_cfg.fd = self->to_pfd[1];
+	w_cfg.loop = self->loop;
+	w_cfg.priv = self;
+	w_cfg.callback = &hammy_worker_writer_cb;
+	H_TRY (self->writer = hammy_writer_new (&w_cfg, ERR_RETURN));
+
 
 END:
 	if (lerr != NULL)
@@ -256,7 +203,7 @@ hammy_worker_task (hammy_worker_t self, gpointer data, gsize data_size, hammy_wo
 {
 	FUNC_BEGIN()
 
-	ssize_t rc;
+	GByteArray *buf;
 
 	g_assert (!hammy_worker_is_busy (self));
 	self->busy = TRUE;
@@ -264,39 +211,13 @@ hammy_worker_task (hammy_worker_t self, gpointer data, gsize data_size, hammy_wo
 	self->callback = callback;
 	self->callback_private = callback_private;
 
-	// Try to write data immediately
-	rc = write (self->to_pfd[1], data, data_size);
-	if (rc < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-		// We can't write data immediately
-		self->input_data = data;
-		self->input_data_size = data_size;
-		// Set up libev for new child write events
-		self->to_io.data = self;
-		ev_io_init (&self->to_io, hammy_worker_to_cb, self->to_pfd[1], EV_WRITE);
-		ev_io_start (self->loop, &self->to_io);
+	buf = g_byte_array_new_take (g_memdup (data, data_size), data_size);
+
+	if (!hammy_writer_write (self->writer, buf, ERR_RETURN))
+	{
+		g_byte_array_free (buf, TRUE);
 		GOTO_END;
 	}
-
-	if (rc < 0) {
-		ERRNO_ERR ("hammy_worker send");
-	}
-
-	if (rc < data_size) {
-		// Not all data sent
-		self->input_data = data + rc;
-		self->input_data_size = data_size - rc;
-		// Set up libev for new child write events
-		self->to_io.data = self;
-		ev_io_init (&self->to_io, hammy_worker_to_cb, self->to_pfd[1], EV_WRITE);
-		ev_io_start(self->loop, &self->to_io);
-		GOTO_END;
-	}
-
-	// All data wrote
-	// Set up libev for new child read events
-	self->from_io.data = self;
-	ev_io_init (&self->from_io, hammy_worker_from_cb, self->from_pfd[0], EV_READ);
-	ev_io_start (self->loop, &self->from_io);
 
 	FUNC_END()
 }

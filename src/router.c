@@ -48,6 +48,7 @@ struct hammy_router_priv
 	// Config
 	gchar* sock_path;
 	gint sock_backlog;
+	struct hammy_eval *eval;
 
 	// In socket
 	struct sockaddr_un socket_un;
@@ -186,24 +187,35 @@ hammy_router_setnonblock(int fd, _H_AERR)
 }
 
 // worker done
-static gboolean
-hammy_router_worker_cb (gpointer private, gpointer data, gsize data_size, GError **error)
+static void
+hammy_router_worker_cb (gpointer private, gpointer data, gsize data_size, GError *error)
 {
-	FUNC_BEGIN()
-
-	GByteArray *buf = g_byte_array_new ();
+	GError *lerr = NULL;
+	GByteArray *buf = NULL;
 
 	struct hammy_router_task *task = (struct hammy_router_task *)private;
 	struct hammy_router_client *client = task->client;
 
 	hammy_router_task_free (task);
 
-	buf->data = data;
-	buf->len = data_size;
+	if (error)
+	{
+		g_propagate_error (&lerr, error);
+		GOTO_END;
+	}
+
+	buf = g_byte_array_new_take (data, data_size);
 
 	H_TRY (hammy_writer_write (client->writer, buf, ERR_RETURN));
 
-	FUNC_END()
+END:
+	if (lerr)
+	{
+		if (buf)
+			 g_byte_array_free (buf, TRUE);
+
+		g_error ("FIXME [%s:%d]: %s", __FILE__, __LINE__, lerr->message); // FIXME
+	}
 }
 
 // We have a new task for worker
@@ -254,6 +266,7 @@ hammy_router_touch_workers (hammy_router_t self, _H_AERR)
 				hammy_worker_t w;
 
 				w_cfg.loop = self->loop;
+				w_cfg.eval = self->eval;
 
 				w = hammy_worker_new (&w_cfg, ERR_RETURN);
 				g_ptr_array_add (self->workers, w);
@@ -367,6 +380,9 @@ hammy_router_new (struct hammy_router_cfg *cfg, GError **error)
 {
 	hammy_router_t self;
 
+	g_assert (cfg->sock_path);
+	g_assert (cfg->eval);
+
 	self = g_new0 (struct hammy_router_priv, 1);
 
 	self->sock_path = g_strdup (cfg->sock_path);
@@ -380,6 +396,8 @@ hammy_router_new (struct hammy_router_cfg *cfg, GError **error)
 	self->max_workers = cfg->max_workers;
 
 	self->loop = ev_default_loop (EVFLAG_AUTO);
+
+	self->eval = cfg->eval;
 
 	return self;
 }

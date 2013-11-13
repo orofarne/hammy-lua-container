@@ -1,5 +1,7 @@
 #pragma once
 
+#include "eval.h"
+
 #include <glib.h>
 // Libev
 #include <ev.h>
@@ -11,12 +13,13 @@ extern "C" {
 struct hammy_worker_cfg
 {
 	struct ev_loop *loop;
+	struct hammy_eval *eval;
 };
 
 struct hammy_worker_priv;
 typedef struct hammy_worker_priv *hammy_worker_t;
 
-typedef gboolean (* hammy_worker_task_cb) (gpointer callback_private, gpointer data, gsize data_size, GError **error);
+typedef void (* hammy_worker_task_cb) (gpointer callback_private, gpointer data, gsize data_size, GError *error);
 
 hammy_worker_t
 hammy_worker_new (struct hammy_worker_cfg *cfg, GError **error);
