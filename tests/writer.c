@@ -10,7 +10,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define N_T_ITER 50
+#define N_T_ITER 5
 
 static int pipefd[2];
 static struct ev_loop *loop;
@@ -46,7 +46,7 @@ static int cleanWriterSuite()
 
 static void testWriterHelloCallback(gpointer priv, GError *error)
 {
-	g_assert (error);
+	g_error ("%s: %s", __FUNCTION__, error->message);
 }
 
 static void testWriterHelloReaderCallback(gpointer priv, GByteArray *data, GError *error)

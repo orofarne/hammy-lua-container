@@ -1,11 +1,21 @@
 #include "main.h"
 
+#include <signal.h>
+
 #define HAMMY_ADD_SUITE(x) \
 	rc = x(); \
 	if (rc) \
 	{ \
 		return rc; \
 	}
+
+void setUpSignals()
+{
+	sigset_t ss;
+	sigemptyset (&ss);
+	sigaddset (&ss, SIGPIPE);
+	sigprocmask (SIG_BLOCK,&ss,(sigset_t *) 0);
+}
 
 int setUpTests()
 {
@@ -20,6 +30,8 @@ int setUpTests()
 
 int main()
 {
+	setUpSignals();
+
 	/* initialize the CUnit test registry */
 	if (CUE_SUCCESS != CU_initialize_registry())
 		return CU_get_error();

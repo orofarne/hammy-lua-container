@@ -109,7 +109,9 @@ hammy_router_client_reader_cb (gpointer priv, GByteArray *data, GError *error)
 static void
 hammy_router_client_writer_cb (gpointer priv, GError *error)
 {
-
+	// FIXME
+	g_assert (error);
+	g_error ("FIXME: %s", error->message);
 }
 
 static void

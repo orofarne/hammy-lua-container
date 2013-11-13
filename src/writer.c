@@ -47,9 +47,8 @@ hammy_writer_writable_cb (struct ev_loop *loop, ev_io *w, int revents)
 		self->current_offset = 0;
 	}
 
-	n = send (self->fd, self->current_buffer->data + self->current_offset,
-						self->current_buffer->len - self->current_offset,
-						MSG_DONTWAIT | MSG_NOSIGNAL);
+	n = write (self->fd, self->current_buffer->data + self->current_offset,
+				self->current_buffer->len - self->current_offset);
 
 	if (n < 0)
 	{

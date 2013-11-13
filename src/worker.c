@@ -79,6 +79,8 @@ hammy_worker_fork (hammy_worker_t self, _H_AERR)
 			g_assert (lerr != NULL);
 			g_error ("[WORKER] Child error: %s", lerr->message);
 		}
+
+		exit (0);
 	}
 	else
 	{
