@@ -74,7 +74,7 @@ hammy_child_new(struct hammy_child_cfg *cfg, GError **error)
 	r_cfg.fd = self->in_socket;
 	r_cfg.loop = self->loop;
 	r_cfg.priv = self;
-	r_cfg.callback = NULL; // FIXME
+	r_cfg.callback = &hammy_child_reader_cb;
 	H_TRY (self->reader = hammy_reader_new (&r_cfg, ERR_RETURN));
 
 	struct hammy_writer_cfg w_cfg;

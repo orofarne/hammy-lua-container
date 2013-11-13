@@ -84,6 +84,12 @@ hammy_router_client_reader_cb (gpointer priv, GByteArray *data, GError *error)
 		g_error ("%s [%d]: %s", __FUNCTION__, __LINE__, error->message);
 	}
 
+	if (!data)
+	{
+		// TODO
+		return;
+	}
+
 	task = g_new0 (struct hammy_router_task, 1);
 	task->client = client;
 	task->data = data->data;
@@ -137,6 +143,7 @@ hammy_router_client_new (hammy_router_t server, int fd, GError **error)
 
 	r_cfg.fd = self->fd;
 	r_cfg.loop = self->server->loop;
+	r_cfg.priv = self;
 	r_cfg.callback = &hammy_router_client_reader_cb;
 	self->reader = hammy_reader_new (&r_cfg, &lerr);
 	if (!self->reader)
@@ -148,6 +155,7 @@ hammy_router_client_new (hammy_router_t server, int fd, GError **error)
 
 	w_cfg.fd = self->fd;
 	w_cfg.loop = self->server->loop;
+	w_cfg.priv = self;
 	w_cfg.callback = &hammy_router_client_writer_cb;
 	self->writer = hammy_writer_new (&w_cfg, &lerr);
 	if (!self->writer)

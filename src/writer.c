@@ -47,8 +47,9 @@ hammy_writer_writable_cb (struct ev_loop *loop, ev_io *w, int revents)
 		self->current_offset = 0;
 	}
 
-	n = write (self->fd, self->current_buffer->data + self->current_offset,
-						self->current_buffer->len - self->current_offset);
+	n = send (self->fd, self->current_buffer->data + self->current_offset,
+						self->current_buffer->len - self->current_offset,
+						MSG_DONTWAIT | MSG_NOSIGNAL);
 
 	if (n < 0)
 	{
@@ -57,6 +58,7 @@ hammy_writer_writable_cb (struct ev_loop *loop, ev_io *w, int revents)
 		}
 		else
 		{
+			ev_io_stop (self->loop, &self->io);
 			E_SET_ERRNO (&err, "write");
 			(*self->callback) (self->priv, err);
 			return;
@@ -112,6 +114,7 @@ hammy_writer_g_byte_array_free (gpointer ptr)
 void
 hammy_writer_free (hammy_writer_t self)
 {
+	ev_io_stop (self->loop, &self->io);
 	if (self->current_buffer)
 		g_byte_array_free (self->current_buffer, TRUE);
 	g_queue_free_full (self->buffers, hammy_writer_g_byte_array_free);

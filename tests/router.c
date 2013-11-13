@@ -2,6 +2,8 @@
 
 #include "main.h"
 
+#include "glib_defines.h"
+
 #include <string.h>
 #include <errno.h>
 
@@ -22,7 +24,17 @@ int cleanRouterSuite()
 	return 0;
 }
 
-gpointer
+static gboolean
+h_router_eval_func (gpointer priv, GByteArray *data, GError **error)
+{
+	FUNC_BEGIN()
+
+	// DO NOTHING
+
+	FUNC_END()
+}
+
+static gpointer
 h_router_thread_func (gpointer data)
 {
 	GError *err = NULL;
@@ -39,6 +51,7 @@ void testRouterTest1()
 {
 	GError *error = NULL;
 	struct hammy_router_cfg cfg;
+	struct hammy_eval eval_cfg;
 	GThread *th = NULL;
 	int sock, msgsock, rval;
 	struct sockaddr_un server;
@@ -49,6 +62,10 @@ void testRouterTest1()
 	cfg.sock_path = g_strdup ("/tmp/hammy_worker_test.socket");
 	cfg.sock_backlog = 100;
 	cfg.max_workers = 1;
+
+	eval_cfg.priv = NULL;
+	eval_cfg.eval = &h_router_eval_func;
+	cfg.eval = &eval_cfg;
 
 	hammy_router_t r = hammy_router_new (&cfg, &error);
 	CU_ASSERT_PTR_NOT_NULL (r);
@@ -112,7 +129,7 @@ int addRouterSuite()
 
 	/* add the tests to the suite */
 	if (
-		//(NULL == CU_add_test(pSuite, "Test1", testRouterTest1)) ||
+		(NULL == CU_add_test(pSuite, "Test1", testRouterTest1)) ||
 		0)
 	{
 		return CU_get_error();
