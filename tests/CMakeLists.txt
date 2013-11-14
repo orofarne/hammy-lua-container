@@ -8,6 +8,7 @@ set(TEST_SOURCES
 	reader.c
 	writer.c
 	router.c
+	lua_eval.c
 )
 
 add_executable(hammy_lua_container_tests ${TEST_SOURCES})
@@ -18,6 +19,7 @@ target_link_libraries(hammy_lua_container_tests
 	${GLIB2_LIBRARIES}
 	${EV_LIBRARY}
 	${MSGPACKCLEN_LIBRARY}
+	${LUAJIT_LIBRARY}
 )
 
 set(test_target hammy_lua_container_tests)

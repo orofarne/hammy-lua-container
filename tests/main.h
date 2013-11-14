@@ -5,3 +5,4 @@
 int addReaderSuite();
 int addWriterSuite();
 int addRouterSuite();
+int addLuaEvalSuite();

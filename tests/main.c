@@ -24,6 +24,7 @@ int setUpTests()
 	HAMMY_ADD_SUITE( addReaderSuite );
 	HAMMY_ADD_SUITE( addWriterSuite );
 	HAMMY_ADD_SUITE( addRouterSuite );
+	HAMMY_ADD_SUITE( addLuaEvalSuite );
 
 	return 0;
 }

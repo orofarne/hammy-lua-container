@@ -4,6 +4,8 @@ add_library(hammy_lua_container_lib STATIC
 	child.c
 	router.c
 	worker.c
+	lua_eval.c
+	${LUACMSGPACK_SRC}
 )
 
 add_executable(hammy_lua_container main.c)
