@@ -9,8 +9,7 @@ extern "C" {
 struct hammy_lua_eval_cfg
 {
 	GSList *preload_code; // List of GString
-	GString *entry_point; // Name of eval function in lua code
-	gboolean sandbox;
+	gchar *entry_point; // Name of eval function in lua code
 };
 
 gpointer

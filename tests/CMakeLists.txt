@@ -16,6 +16,7 @@ add_dependencies(hammy_lua_container_tests hammy_lua_container_lib)
 target_link_libraries(hammy_lua_container_tests
 	${CUNIT_LIBRARY}
 	hammy_lua_container_lib
+	luacmsgpack_lib
 	${GLIB2_LIBRARIES}
 	${EV_LIBRARY}
 	${MSGPACKCLEN_LIBRARY}

@@ -61,7 +61,7 @@ void testRouterTest1()
 	char buf1[] = {'\xa5', 'H', 'e', 'l', 'l', 'o'};
 	char buf2[sizeof(buf1)];
 
-	memset (&cfg, sizeof(cfg), 0);
+	memset (&cfg, 0, sizeof(cfg));
 	cfg.sock_path = g_strdup ("/tmp/hammy-lc-t-XXXXXX");
 	g_assert (mktemp (cfg.sock_path));
 	cfg.sock_backlog = 100;

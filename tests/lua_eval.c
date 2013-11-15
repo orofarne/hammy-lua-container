@@ -22,12 +22,10 @@ static void testLuaEvalHello ()
 	GError *err = NULL;
 	GSList *code = NULL;
 	GByteArray *d = NULL;
-	GString *ep;
 	struct hammy_lua_eval_cfg cfg;
 	gpointer l = NULL;
 
 	memset (&cfg, 0, sizeof(cfg));
-	ep = g_string_new ("echo");
 	code = g_slist_prepend (code, g_string_new (
 						"function echo()\n"
 						"	__response = __request\n"
@@ -35,8 +33,7 @@ static void testLuaEvalHello ()
 						));
 
 	cfg.preload_code = code;
-	cfg.entry_point = ep;
-	cfg.sandbox = TRUE;
+	cfg.entry_point = "echo";
 	l = hammy_lua_eval_new(&cfg, &err);
 	CU_ASSERT_PTR_NOT_NULL_FATAL (l);
 	CU_ASSERT_PTR_NULL_FATAL (err);
@@ -49,7 +46,6 @@ static void testLuaEvalHello ()
 
 	hammy_lua_eval_free (l);
 	g_slist_free_full (code, &freeGString);
-	g_string_free (ep, TRUE);
 	g_byte_array_free (d, TRUE);
 }
 
